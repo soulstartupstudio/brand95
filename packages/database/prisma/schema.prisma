@@ -1,0 +1,437 @@
+// Brand95 OS — Blueprint MVP schema.
+// Conventions: UUID ids, createdAt/updatedAt audit fields, workspace ownership
+// on aggregate roots, append-only Event log. See docs/data-model.md for what
+// is implemented now versus deferred to later milestones.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Identity / portfolio ----------
+
+model Workspace {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users            User[]
+  brands           Brand[]
+  approvalRequests ApprovalRequest[]
+  artifacts        Artifact[]
+  events           Event[]
+}
+
+enum UserRole {
+  FOUNDER
+  OPERATOR
+  VIEWER
+}
+
+model User {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @db.Uuid
+  email       String   @unique
+  name        String
+  role        UserRole @default(OPERATOR)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace         Workspace          @relation(fields: [workspaceId], references: [id])
+  approvalDecisions ApprovalDecision[]
+  decisions         Decision[]
+}
+
+enum BrandStatus {
+  ACTIVE
+  PARKED
+  REJECTED
+  ARCHIVED
+}
+
+enum ValidationRoute {
+  RETAIL_FIRST
+  D2C_FIRST
+  DUAL
+}
+
+enum PreferredChannel {
+  RETAIL_FIRST
+  D2C_FIRST
+  DUAL_VALIDATION
+}
+
+model Brand {
+  id                String      @id @default(uuid()) @db.Uuid
+  workspaceId       String      @db.Uuid
+  name              String
+  codename          String?
+  status            BrandStatus @default(ACTIVE)
+  currentStageIndex Int         @default(0)
+  route             ValidationRoute?
+  archivedAt        DateTime?
+
+  // Intake (wizard step 1)
+  concept              String
+  problem              String?
+  customerHypothesis   String?
+  priceRange           String?
+  geography            String?
+  convictionStatement  String?
+  knownConstraints     String?
+  channelHypothesis    String?
+
+  // Constraints (wizard step 2)
+  startingBudget         String?
+  maxInventoryExposure   String?
+  desiredLaunchDate      DateTime?
+  founderHoursPerWeek    Int?
+  complianceConcerns     String?
+  existingAssets         String?
+  preferredChannel       PreferredChannel?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id])
+  stages           BrandStage[]
+  workstreams      Workstream[]
+  tasks            Task[]
+  approvalRequests ApprovalRequest[]
+  decisions        Decision[]
+  risks            Risk[]
+  artifacts        Artifact[]
+  agentRuns        AgentRun[]
+  events           Event[]
+
+  @@unique([workspaceId, name])
+}
+
+// ---------- Blueprint: stages, gates, criteria, evidence ----------
+
+enum StageStatus {
+  LOCKED
+  ACTIVE
+  COMPLETE
+  SKIPPED
+}
+
+model BrandStage {
+  id        String      @id @default(uuid()) @db.Uuid
+  brandId   String      @db.Uuid
+  index     Int
+  slug      String
+  name      String
+  purpose   String
+  status    StageStatus @default(LOCKED)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  brand Brand      @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  gate  StageGate?
+  tasks Task[]
+
+  @@unique([brandId, index])
+}
+
+enum GateStatus {
+  NOT_READY
+  READY
+  PASSED
+}
+
+model StageGate {
+  id                String     @id @default(uuid()) @db.Uuid
+  stageId           String     @unique @db.Uuid
+  status            GateStatus @default(NOT_READY)
+  approvalRequestId String?    @unique @db.Uuid
+  passedAt          DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  stage           BrandStage       @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  approvalRequest ApprovalRequest? @relation(fields: [approvalRequestId], references: [id])
+  criteria        GateCriterion[]
+}
+
+enum CriterionStatus {
+  PENDING
+  MET
+  WAIVED
+}
+
+model GateCriterion {
+  id              String          @id @default(uuid()) @db.Uuid
+  gateId          String          @db.Uuid
+  key             String
+  label           String
+  founderJudgment Boolean         @default(false)
+  evidenceTarget  String?
+  status          CriterionStatus @default(PENDING)
+  waivedReason    String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  gate     StageGate      @relation(fields: [gateId], references: [id], onDelete: Cascade)
+  evidence GateEvidence[]
+
+  @@unique([gateId, key])
+}
+
+enum EvidenceType {
+  CUSTOMER_SIGNAL
+  INTERVIEW
+  RETAILER_SIGNAL
+  METRIC
+  DOCUMENT
+  LINK
+  NOTE
+}
+
+model GateEvidence {
+  id          String       @id @default(uuid()) @db.Uuid
+  criterionId String       @db.Uuid
+  type        EvidenceType
+  source      String
+  note        String?
+  recordedBy  String? // user id or agent key, denormalized for the audit trail
+  createdAt   DateTime     @default(now())
+
+  criterion GateCriterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+}
+
+// ---------- Work management ----------
+
+enum WorkstreamTrack {
+  BRAND
+  COMMERCIAL
+}
+
+model Workstream {
+  id        String          @id @default(uuid()) @db.Uuid
+  brandId   String          @db.Uuid
+  track     WorkstreamTrack
+  name      String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  brand Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  tasks Task[]
+
+  @@unique([brandId, track, name])
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+  CANCELLED
+}
+
+model Task {
+  id            String     @id @default(uuid()) @db.Uuid
+  brandId       String     @db.Uuid
+  workstreamId  String?    @db.Uuid
+  stageId       String?    @db.Uuid
+  title         String
+  description   String?
+  status        TaskStatus @default(TODO)
+  assigneeAgent String? // agent key from the domain registry
+  dueAt         DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  brand      Brand            @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  workstream Workstream?      @relation(fields: [workstreamId], references: [id])
+  stage      BrandStage?      @relation(fields: [stageId], references: [id])
+  dependsOn  TaskDependency[] @relation("dependent")
+  dependents TaskDependency[] @relation("dependency")
+}
+
+model TaskDependency {
+  id          String @id @default(uuid()) @db.Uuid
+  taskId      String @db.Uuid
+  dependsOnId String @db.Uuid
+
+  task      Task @relation("dependent", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOn Task @relation("dependency", fields: [dependsOnId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, dependsOnId])
+}
+
+// ---------- Approvals and decisions ----------
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+  EXPIRED
+  EXECUTED
+}
+
+model ApprovalRequest {
+  id          String         @id @default(uuid()) @db.Uuid
+  workspaceId String         @db.Uuid
+  brandId     String?        @db.Uuid
+  level       Int // 0-3, from the domain approval policy
+  actionType  String // ActionType from the domain catalogue
+  status      ApprovalStatus @default(PENDING)
+  /// Validated against approvalRequestContentSchema before insert.
+  content     Json
+  requestedBy String // user id or agent key
+  expiresAt   DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  workspace Workspace         @relation(fields: [workspaceId], references: [id])
+  brand     Brand?            @relation(fields: [brandId], references: [id])
+  decision  ApprovalDecision?
+  gate      StageGate?
+}
+
+model ApprovalDecision {
+  id        String   @id @default(uuid()) @db.Uuid
+  requestId String   @unique @db.Uuid
+  outcome   String // APPROVED | REJECTED | CHANGES_REQUESTED
+  note      String?
+  decidedById String @db.Uuid
+  decidedAt DateTime @default(now())
+
+  request   ApprovalRequest @relation(fields: [requestId], references: [id])
+  decidedBy User            @relation(fields: [decidedById], references: [id])
+}
+
+model Decision {
+  id          String   @id @default(uuid()) @db.Uuid
+  brandId     String   @db.Uuid
+  title       String
+  outcome     String // e.g. PROCEED | REVISE | PARK | REJECT | ROUTE_DUAL ...
+  rationale   String?
+  decidedById String?  @db.Uuid
+  createdAt   DateTime @default(now())
+
+  brand     Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  decidedBy User? @relation(fields: [decidedById], references: [id])
+}
+
+enum RiskSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RiskStatus {
+  OPEN
+  MITIGATED
+  CLOSED
+}
+
+model Risk {
+  id         String       @id @default(uuid()) @db.Uuid
+  brandId    String       @db.Uuid
+  title      String
+  severity   RiskSeverity @default(MEDIUM)
+  status     RiskStatus   @default(OPEN)
+  mitigation String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+}
+
+// ---------- Knowledge and artifacts ----------
+
+model Artifact {
+  id             String   @id @default(uuid()) @db.Uuid
+  workspaceId    String   @db.Uuid
+  brandId        String?  @db.Uuid
+  title          String
+  kind           String // opportunity_memo | brand_brief | line_sheet | ...
+  currentVersion Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  workspace Workspace         @relation(fields: [workspaceId], references: [id])
+  brand     Brand?            @relation(fields: [brandId], references: [id])
+  versions  ArtifactVersion[]
+}
+
+model ArtifactVersion {
+  id         String   @id @default(uuid()) @db.Uuid
+  artifactId String   @db.Uuid
+  version    Int
+  format     String // markdown | url | file
+  content    String?
+  url        String?
+  createdBy  String // user id or agent key
+  createdAt  DateTime @default(now())
+
+  artifact Artifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+
+  @@unique([artifactId, version])
+}
+
+// ---------- Agent runtime ----------
+
+enum AgentRunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model AgentRun {
+  id          String         @id @default(uuid()) @db.Uuid
+  brandId     String?        @db.Uuid
+  agentKey    String // AgentKey from the domain registry
+  status      AgentRunStatus @default(QUEUED)
+  objective   String
+  /// Validated against agentHandoffSchema.
+  handoff     Json?
+  /// Validated against agentResultSchema.
+  result      Json?
+  error       String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  brand Brand? @relation(fields: [brandId], references: [id])
+}
+
+// ---------- Audit ----------
+
+enum ActorType {
+  USER
+  AGENT
+  SYSTEM
+}
+
+/// Append-only. Never update or delete rows.
+model Event {
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @db.Uuid
+  brandId     String?   @db.Uuid
+  actorType   ActorType
+  actorId     String? // user id or agent key
+  verb        String // brand.created | gate.approved | criterion.met | ...
+  entityType  String
+  entityId    String
+  payload     Json?
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  brand     Brand?    @relation(fields: [brandId], references: [id])
+
+  @@index([brandId, createdAt])
+  @@index([workspaceId, createdAt])
+}

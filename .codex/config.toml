@@ -1,0 +1,8 @@
+# Codex project configuration for Brand95 OS.
+# Agent definitions live in .codex/agents/*.toml.
+# Models are intentionally not hard-coded; override per environment, e.g.:
+#   model = "<your-orchestration-model>"
+# Use a capable reasoning model for the orchestrator and a faster model for
+# read-heavy parallel scans when supported.
+
+project_doc = "AGENTS.md"

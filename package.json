@@ -1,0 +1,31 @@
+{
+  "name": "brand95-os",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Brand95 OS — approval-gated multi-brand operating system",
+  "scripts": {
+    "dev": "pnpm --filter @brand95/web dev",
+    "build": "pnpm --filter @brand95/database db:generate && pnpm -r build",
+    "start": "pnpm --filter @brand95/web start",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "db:generate": "pnpm --filter @brand95/database db:generate",
+    "db:migrate": "pnpm --filter @brand95/database db:migrate",
+    "db:push": "pnpm --filter @brand95/database db:push",
+    "db:seed": "pnpm --filter @brand95/database db:seed"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.6.5",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma",
+      "sharp"
+    ]
+  }
+}

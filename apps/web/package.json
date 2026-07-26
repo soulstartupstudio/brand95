@@ -1,0 +1,27 @@
+{
+  "name": "@brand95/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "echo 'web: no tests yet (E2E arrives with the agent runtime milestone)'"
+  },
+  "dependencies": {
+    "@brand95/database": "workspace:*",
+    "@brand95/domain": "workspace:*",
+    "dotenv": "^16.5.0",
+    "next": "^15.3.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "typescript": "^5.8.3"
+  }
+}
