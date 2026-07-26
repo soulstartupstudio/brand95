@@ -15,7 +15,9 @@ export default async function setup() {
 
   execSync("pnpm exec prisma migrate deploy", {
     cwd: new URL("..", import.meta.url).pathname,
-    env: { ...process.env, DATABASE_URL: url },
+    // Override DIRECT_URL too — migrate uses it, and it must never point at
+    // the real database while tests run.
+    env: { ...process.env, DATABASE_URL: url, DIRECT_URL: url },
     stdio: "inherit",
   });
 

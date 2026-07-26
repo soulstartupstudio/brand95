@@ -10,6 +10,10 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Direct (non-pooled) connection for migrations. With plain Postgres, set it
+  // to the same value as DATABASE_URL; with Supabase, use the 5432 direct URL
+  // while DATABASE_URL uses the 6543 transaction pooler.
+  directUrl = env("DIRECT_URL")
 }
 
 // ---------- Identity / portfolio ----------

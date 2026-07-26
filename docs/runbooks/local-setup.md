@@ -9,8 +9,11 @@
    ```
 3. Configure:
    ```bash
-   cp .env.example .env                   # adjust DATABASE_URL if needed
+   cp .env.example .env                   # adjust DATABASE_URL/DIRECT_URL if needed
    ```
+   To use Supabase instead of local Postgres for the app database, see
+   [supabase.md](./supabase.md) — only steps 1–2 (databases) change; the test
+   database stays local either way.
 4. Install, migrate, seed, run:
    ```bash
    pnpm install
