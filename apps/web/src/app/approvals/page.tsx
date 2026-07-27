@@ -3,7 +3,7 @@ import type { ApprovalRequestContent } from "@brand95/domain";
 import Link from "next/link";
 import { LevelBadge, StatusBadge } from "@/components/badges";
 import { ActionForm } from "@/components/action-form";
-import { decideApprovalAction } from "@/lib/actions";
+import { decideApprovalAction, executeOutreachAction } from "@/lib/actions";
 import { getCurrentContext } from "@/lib/current-user";
 
 export const dynamic = "force-dynamic";
@@ -14,14 +14,28 @@ export default async function ApprovalsPage() {
     return <div className="empty-state">Run the seed first (`pnpm db:seed`).</div>;
   }
 
-  const [pending, recent] = await Promise.all([
+  const [pending, executable, recent] = await Promise.all([
     prisma.approvalRequest.findMany({
       where: { workspaceId: ctx.workspace.id, status: "PENDING" },
       include: { brand: true },
       orderBy: { createdAt: "asc" },
     }),
     prisma.approvalRequest.findMany({
-      where: { workspaceId: ctx.workspace.id, status: { not: "PENDING" } },
+      where: {
+        workspaceId: ctx.workspace.id,
+        status: "APPROVED",
+        actionType: "external_outreach_campaign",
+      },
+      include: { brand: true, outreachMessages: true },
+      orderBy: { updatedAt: "asc" },
+    }),
+    prisma.approvalRequest.findMany({
+      where: {
+        workspaceId: ctx.workspace.id,
+        status: { not: "PENDING" },
+        // Approved-but-unexecuted outreach batches live in their own section.
+        NOT: { status: "APPROVED", actionType: "external_outreach_campaign" },
+      },
       include: { brand: true, decision: { include: { decidedBy: true } } },
       orderBy: { updatedAt: "desc" },
       take: 10,
@@ -123,6 +137,40 @@ export default async function ApprovalsPage() {
           </div>
         );
       })}
+
+      {executable.length > 0 && (
+        <>
+          <h2>Approved — ready to execute</h2>
+          {executable.map((req) => {
+            const content = req.content as unknown as ApprovalRequestContent;
+            return (
+              <div key={req.id} className="card" style={{ marginBottom: 14 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <strong>{content.proposedAction}</strong>
+                    <div className="muted">
+                      {req.outreachMessages.length} message
+                      {req.outreachMessages.length === 1 ? "" : "s"} · approved,
+                      not yet sent
+                    </div>
+                  </div>
+                  <ActionForm action={executeOutreachAction} className="inline-form">
+                    <input type="hidden" name="requestId" value={req.id} />
+                    <button className="btn primary">Execute send</button>
+                  </ActionForm>
+                </div>
+              </div>
+            );
+          })}
+        </>
+      )}
 
       {recent.length > 0 && (
         <>

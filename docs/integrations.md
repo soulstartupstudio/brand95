@@ -7,7 +7,8 @@ environment variables (`.env.example`) and a setup screen (Milestone 5).
 
 | Integration | Use | Status |
 |-------------|-----|--------|
-| OpenAI | agent orchestration, structured generation | planned (Milestone 3/4) |
+| Anthropic (Claude) | agent orchestration, structured generation | **live** — set `ANTHROPIC_API_KEY` (model via `ANTHROPIC_MODEL`, default `claude-opus-5`); without a key agents run in labeled mock mode |
+| Email (outreach sends) | executing approved outreach batches | **mock provider live** (`EMAIL_PROVIDER=mock` records sends in the DB); real Gmail is Milestone 5 |
 | Gmail | retail outreach, supplier comms — draft vs send, approval-gated | planned (Milestone 5) |
 | Google Drive | brand assets, contracts, artifact links | planned (Milestone 5) |
 | Google Calendar | buyer meetings, stage reviews | planned (Milestone 5) |

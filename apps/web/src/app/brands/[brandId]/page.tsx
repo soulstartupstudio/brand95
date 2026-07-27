@@ -22,7 +22,11 @@ export default async function BrandOverviewPage({
       tasks: { where: { status: { in: ["TODO", "IN_PROGRESS", "BLOCKED"] } } },
       risks: { where: { status: "OPEN" }, orderBy: { severity: "desc" } },
       approvalRequests: { where: { status: "PENDING" } },
-      artifacts: { orderBy: { updatedAt: "desc" }, take: 5 },
+      artifacts: {
+        orderBy: { updatedAt: "desc" },
+        take: 8,
+        include: { versions: { orderBy: { version: "desc" }, take: 1 } },
+      },
     },
   });
   if (!brand) notFound();
@@ -121,16 +125,35 @@ export default async function BrandOverviewPage({
       {brand.artifacts.length > 0 && (
         <>
           <h2>Recent artifacts</h2>
-          <div className="grid cols-2">
-            {brand.artifacts.map((a) => (
-              <div key={a.id} className="card">
-                <h3 style={{ fontSize: 15 }}>{a.title}</h3>
-                <div className="muted">
-                  {a.kind} · v{a.currentVersion}
-                </div>
+          {brand.artifacts.map((a) => (
+            <div key={a.id} className="card" style={{ marginBottom: 12 }}>
+              <h3 style={{ fontSize: 15 }}>{a.title}</h3>
+              <div className="muted">
+                {a.kind} · v{a.currentVersion} · by {a.versions[0]?.createdBy ?? "—"}
               </div>
-            ))}
-          </div>
+              {a.versions[0]?.content && (
+                <details style={{ marginTop: 8 }}>
+                  <summary className="muted" style={{ cursor: "pointer" }}>
+                    Read document
+                  </summary>
+                  <pre
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      fontSize: 13.5,
+                      fontFamily: "var(--font)",
+                      background: "var(--surface-2)",
+                      padding: 14,
+                      borderRadius: 8,
+                      maxHeight: 480,
+                      overflowY: "auto",
+                    }}
+                  >
+                    {a.versions[0].content}
+                  </pre>
+                </details>
+              )}
+            </div>
+          ))}
         </>
       )}
     </>

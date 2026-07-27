@@ -5,13 +5,18 @@ building brands
 ## Brand95 OS — this repository
 
 This repo contains the working Brand95 OS implementation (the full product
-specification follows below). Current status: **Milestone 1 (Foundation) and
-the Milestone 2 Blueprint MVP** are live — pnpm/TypeScript monorepo, the
-11-stage Blueprint as a tested stage-gated state machine, PostgreSQL + Prisma
-persistence with an append-only event log, approval-gated stage advancement,
-and a Next.js app with the portfolio dashboard, Create Brand wizard, brand
-blueprint view, and approval inbox. Seed data ships the Camera95, Crossbody,
-Standard Dental, and Hold candidates.
+specification follows below). Current status: **Milestones 1–2 plus the first
+agent-runtime slice of Milestones 3–4** are live — pnpm/TypeScript monorepo,
+the 11-stage Blueprint as a tested stage-gated state machine, PostgreSQL +
+Prisma persistence with an append-only event log, approval-gated stage
+advancement, a Next.js app (portfolio dashboard, Create Brand wizard,
+blueprint view, approval inbox), and Claude-powered specialist agents: the
+CEO Orchestrator runs Discover research with Research/Retail/Product/Finance
+in parallel and consolidates the Opportunity Memo, and the Retail agent
+drafts outreach batches that send only after founder approval, idempotently.
+Set `ANTHROPIC_API_KEY` in `.env` for real agent output; without it agents
+run in labeled mock mode. Seed data ships the Camera95, Crossbody, Standard
+Dental, and Hold candidates.
 
 ```bash
 pnpm install

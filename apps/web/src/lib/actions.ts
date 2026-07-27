@@ -249,3 +249,70 @@ export async function setBrandStatus(
 export async function goToBrand(brandId: string) {
   redirect(`/brands/${brandId}`);
 }
+
+// ---------- Agent runtime ----------
+
+export async function runDiscoverAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  try {
+    const { user } = await requireContext();
+    const parsed = z
+      .object({ brandId: z.string().uuid() })
+      .parse(Object.fromEntries(formData));
+    const { runDiscoverResearch } = await import("@brand95/agents");
+    await runDiscoverResearch({ brandId: parsed.brandId, requestedBy: user.id });
+    revalidatePath(`/brands/${parsed.brandId}`, "layout");
+    return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function draftOutreachAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  try {
+    const { user } = await requireContext();
+    const parsed = z
+      .object({
+        brandId: z.string().uuid(),
+        count: z.coerce.number().int().min(1).max(10).default(5),
+      })
+      .parse(Object.fromEntries(formData));
+    const { draftRetailOutreach } = await import("@brand95/agents");
+    await draftRetailOutreach({
+      brandId: parsed.brandId,
+      requestedBy: user.id,
+      count: parsed.count,
+    });
+    revalidatePath(`/brands/${parsed.brandId}`, "layout");
+    revalidatePath("/approvals");
+    return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function executeOutreachAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  try {
+    const { user } = await requireContext();
+    const parsed = z
+      .object({ requestId: z.string().uuid() })
+      .parse(Object.fromEntries(formData));
+    const { executeApprovedOutreach } = await import("@brand95/agents");
+    await executeApprovedOutreach({
+      requestId: parsed.requestId,
+      actorId: user.id,
+    });
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
+}

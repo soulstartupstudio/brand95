@@ -61,6 +61,25 @@ Conventions: UUID primary keys, `createdAt`/`updatedAt` audit timestamps,
 soft-deletion via `archivedAt` where appropriate, workspace ownership on every
 aggregate root.
 
+### `packages/agents` — the agent runtime
+
+Claude-powered specialist agents with a zero-credential mock mode. Contains
+the LLM access layer (structured JSON outputs validated by zod, refusal
+handling), per-agent system prompts, and the first two agent workflows:
+
+- **Discover research** (`workflows/discover.ts`): the CEO Orchestrator spawns
+  Research, Retail, Product, and Finance in parallel, saves each deliverable
+  as a versioned artifact, attaches evidence to the Discover gate criteria,
+  and consolidates the Opportunity Memo with a proceed/revise/park/reject
+  recommendation. Idempotent against double-runs; re-runs create new artifact
+  versions, never duplicates.
+- **Retail outreach** (`workflows/outreach.ts`): drafts personalized emails
+  behind a Level 1 batch approval; execution goes through the email adapter
+  with an idempotency key per message so retries can never double-send.
+
+Without `ANTHROPIC_API_KEY`, both run in mock mode with clearly labeled
+placeholder output, so the full flow stays demoable and testable.
+
 ### `apps/web` — the application
 
 Next.js App Router. Reads happen in server components straight through Prisma;

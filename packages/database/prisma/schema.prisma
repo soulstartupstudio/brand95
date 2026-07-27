@@ -112,6 +112,7 @@ model Brand {
   artifacts        Artifact[]
   agentRuns        AgentRun[]
   events           Event[]
+  outreachMessages OutreachMessage[]
 
   @@unique([workspaceId, name])
 }
@@ -298,6 +299,7 @@ model ApprovalRequest {
   brand     Brand?            @relation(fields: [brandId], references: [id])
   decision  ApprovalDecision?
   gate      StageGate?
+  outreachMessages OutreachMessage[]
 }
 
 model ApprovalDecision {
@@ -410,6 +412,46 @@ model AgentRun {
   updatedAt   DateTime       @updatedAt
 
   brand Brand? @relation(fields: [brandId], references: [id])
+}
+
+// ---------- Retail outreach ----------
+
+enum OutreachStatus {
+  DRAFT
+  QUEUED
+  SENT
+  FAILED
+}
+
+model OutreachMessage {
+  id                   String         @id @default(uuid()) @db.Uuid
+  brandId              String         @db.Uuid
+  prospectName         String
+  prospectType         String?
+  toEmail              String?
+  subject              String
+  body                 String
+  personalizationBasis String?
+  status               OutreachStatus @default(DRAFT)
+  approvalRequestId    String?        @db.Uuid
+  provider             String? // mock | gmail
+  externalId           String? // provider message id
+  sentAt               DateTime?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  brand           Brand            @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  approvalRequest ApprovalRequest? @relation(fields: [approvalRequestId], references: [id])
+}
+
+/// Guards external side effects: an executed action records its key here, so
+/// retries can never duplicate the send/order/publish.
+model IdempotencyKey {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique
+  scope     String // e.g. outreach.send
+  result    Json?
+  createdAt DateTime @default(now())
 }
 
 // ---------- Audit ----------

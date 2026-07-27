@@ -6,7 +6,7 @@ import type { NextConfig } from "next";
 config({ path: path.resolve(process.cwd(), "../../.env") });
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@brand95/domain", "@brand95/database"],
+  transpilePackages: ["@brand95/domain", "@brand95/database", "@brand95/agents"],
 };
 
 export default nextConfig;

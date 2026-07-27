@@ -10,6 +10,7 @@
     "test": "echo 'web: no tests yet (E2E arrives with the agent runtime milestone)'"
   },
   "dependencies": {
+    "@brand95/agents": "workspace:*",
     "@brand95/database": "workspace:*",
     "@brand95/domain": "workspace:*",
     "dotenv": "^16.5.0",
