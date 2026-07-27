@@ -252,7 +252,7 @@ export async function goToBrand(brandId: string) {
 
 // ---------- Agent runtime ----------
 
-export async function runDiscoverAction(
+export async function runStageAgentsAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
@@ -261,9 +261,23 @@ export async function runDiscoverAction(
     const parsed = z
       .object({ brandId: z.string().uuid() })
       .parse(Object.fromEntries(formData));
-    const { runDiscoverResearch } = await import("@brand95/agents");
-    await runDiscoverResearch({ brandId: parsed.brandId, requestedBy: user.id });
+    const { runStageAgents } = await import("@brand95/agents");
+    await runStageAgents({ brandId: parsed.brandId, requestedBy: user.id });
     revalidatePath(`/brands/${parsed.brandId}`, "layout");
+    return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function generateCeoReviewAction(
+  _prev: ActionState,
+): Promise<ActionState> {
+  try {
+    const { workspace, user } = await requireContext();
+    const { runWeeklyCeoReview } = await import("@brand95/agents");
+    await runWeeklyCeoReview({ workspaceId: workspace.id, requestedBy: user.id });
+    revalidatePath("/");
     return { ok: true };
   } catch (err) {
     return fail(err);

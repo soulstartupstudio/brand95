@@ -1,7 +1,9 @@
 import { prisma } from "@brand95/database";
 import { checkPortfolioDiscipline, getStage } from "@brand95/domain";
 import Link from "next/link";
+import { ActionForm } from "@/components/action-form";
 import { StatusBadge } from "@/components/badges";
+import { generateCeoReviewAction } from "@/lib/actions";
 import { getCurrentContext } from "@/lib/current-user";
 
 export const dynamic = "force-dynamic";
@@ -45,6 +47,11 @@ export default async function PortfolioPage() {
     }),
   ]);
 
+  const ceoReview = await prisma.artifact.findFirst({
+    where: { workspaceId: ctx.workspace.id, brandId: null, kind: "ceo_review" },
+    include: { versions: { orderBy: { version: "desc" }, take: 1 } },
+  });
+
   const warnings = checkPortfolioDiscipline(
     brands.map((b) => ({
       id: b.id,
@@ -76,6 +83,50 @@ export default async function PortfolioPage() {
           <span className="muted">({w.brandNames.join(", ")})</span>
         </div>
       ))}
+
+      <div className="card" style={{ marginBottom: 18 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <div>
+            <h3>Weekly CEO review</h3>
+            <div className="muted">
+              {ceoReview
+                ? `Latest: v${ceoReview.currentVersion}, ${ceoReview.updatedAt.toISOString().slice(0, 10)}`
+                : "Not generated yet — the CEO Orchestrator reviews every brand, finds the biggest bottleneck, and recommends at most three priorities each."}
+            </div>
+          </div>
+          <ActionForm action={generateCeoReviewAction} className="inline-form">
+            <button className="btn">Generate review</button>
+          </ActionForm>
+        </div>
+        {ceoReview?.versions[0]?.content && (
+          <details style={{ marginTop: 10 }}>
+            <summary className="muted" style={{ cursor: "pointer" }}>
+              Read the briefing
+            </summary>
+            <pre
+              style={{
+                whiteSpace: "pre-wrap",
+                fontSize: 13.5,
+                fontFamily: "var(--font)",
+                background: "var(--surface-2)",
+                padding: 14,
+                borderRadius: 8,
+                maxHeight: 480,
+                overflowY: "auto",
+              }}
+            >
+              {ceoReview.versions[0].content}
+            </pre>
+          </details>
+        )}
+      </div>
 
       {pendingApprovals.length > 0 && (
         <div className="card" style={{ marginBottom: 18 }}>

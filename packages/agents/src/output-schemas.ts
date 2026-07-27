@@ -26,23 +26,38 @@ export const specialistOutputSchema = z.object({
 
 export type SpecialistOutput = z.infer<typeof specialistOutputSchema>;
 
-/** CEO consolidation: the Opportunity Memo plus a recommendation. */
-export const opportunityMemoSchema = z.object({
+/** CEO consolidation: one stage-level decision document plus a recommendation. */
+export const stageReportSchema = z.object({
   summary: z.string(),
-  memo_markdown: z
+  report_markdown: z
     .string()
     .describe(
-      "The consolidated Opportunity Memo in markdown: opportunity, customer, competition, price architecture, unit economics, retail landscape, risks — separating facts, estimates, and hypotheses.",
+      "The consolidated stage document in markdown, separating facts, estimates, and hypotheses under explicit headings.",
     ),
   recommendation: z.enum(["proceed", "revise", "park", "reject"]),
   recommendation_rationale: z.string(),
   missing_evidence: z
     .array(z.string())
-    .describe("What is still missing before the Discover gate criteria can be met."),
+    .describe(
+      "What is still missing before this stage's gate criteria can honestly be met.",
+    ),
   next_recommended_action: z.string(),
 });
 
-export type OpportunityMemo = z.infer<typeof opportunityMemoSchema>;
+export type StageReport = z.infer<typeof stageReportSchema>;
+
+/** Portfolio-wide CEO review. */
+export const ceoReviewSchema = z.object({
+  summary: z.string(),
+  briefing_markdown: z
+    .string()
+    .describe(
+      "The founder briefing in markdown: per active brand, the biggest bottleneck and at most three priorities; then overdue approvals, open high risks, and portfolio-level calls.",
+    ),
+  next_recommended_action: z.string(),
+});
+
+export type CeoReview = z.infer<typeof ceoReviewSchema>;
 
 /** Retail outreach drafting: personalized drafts, never sent without approval. */
 export const outreachBatchSchema = z.object({

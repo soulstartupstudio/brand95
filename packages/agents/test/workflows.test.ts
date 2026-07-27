@@ -6,7 +6,9 @@ import {
   setCriterionStatus,
 } from "@brand95/database";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { runWeeklyCeoReview } from "../src/workflows/ceo-review";
 import { runDiscoverResearch } from "../src/workflows/discover";
+import { runStageAgents, STAGE_PLANS } from "../src/workflows/engine";
 import {
   draftRetailOutreach,
   executeApprovedOutreach,
@@ -180,5 +182,81 @@ describe("Retail outreach draft → approve → execute (mock mode)", () => {
       where: { scope: "outreach.send" },
     });
     expect(keys).toBe(3);
+  });
+});
+
+describe("stage-aware engine beyond Discover", () => {
+  it("has a plan for every stage from Discover to Systemize", () => {
+    for (let i = 1; i <= 10; i++) {
+      expect(STAGE_PLANS[i], `plan for stage ${i}`).toBeTruthy();
+      expect(STAGE_PLANS[i]!.specialists.length).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("runs the Validate stage plan after the Discover gate passes", async () => {
+    // Advance the test brand from Discover (1) to Validate (2).
+    const stage1 = await prisma.brandStage.findUniqueOrThrow({
+      where: { brandId_index: { brandId, index: 1 } },
+    });
+    const gate = await prisma.stageGate.findUniqueOrThrow({
+      where: { stageId: stage1.id },
+      include: { criteria: true },
+    });
+    for (const c of gate.criteria) {
+      await setCriterionStatus({
+        criterionId: c.id,
+        status: "MET",
+        actorId: founderId,
+      });
+    }
+    const { request } = await requestGateApproval({
+      gateId: gate.id,
+      requestedBy: founderId,
+    });
+    await decideApproval({
+      requestId: request.id,
+      deciderId: founderId,
+      outcome: "APPROVED",
+    });
+
+    const result = await runStageAgents({ brandId, requestedBy: founderId });
+    expect(result.stageIndex).toBe(2);
+    expect(result.stageName).toBe("Validate");
+    expect(result.specialistsSucceeded).toBe(4);
+
+    const report = await prisma.artifact.findFirst({
+      where: { brandId, kind: "validation_report" },
+    });
+    expect(report).toBeTruthy();
+
+    // Evidence attached to Validate criteria, not Discover's.
+    const evidence = await prisma.gateEvidence.findMany({
+      where: { criterion: { gate: { stage: { brandId, index: 2 } } } },
+    });
+    expect(evidence.length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe("weekly CEO review", () => {
+  it("produces a versioned workspace-level briefing", async () => {
+    const first = await runWeeklyCeoReview({
+      workspaceId,
+      requestedBy: founderId,
+    });
+    expect(first.version).toBe(1);
+    const second = await runWeeklyCeoReview({
+      workspaceId,
+      requestedBy: founderId,
+    });
+    expect(second.artifactId).toBe(first.artifactId);
+    expect(second.version).toBe(2);
+
+    const artifact = await prisma.artifact.findUniqueOrThrow({
+      where: { id: first.artifactId },
+      include: { versions: true },
+    });
+    expect(artifact.brandId).toBeNull();
+    expect(artifact.kind).toBe("ceo_review");
+    expect(artifact.versions).toHaveLength(2);
   });
 });

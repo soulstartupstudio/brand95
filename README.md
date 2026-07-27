@@ -10,10 +10,13 @@ agent-runtime slice of Milestones 3–4** are live — pnpm/TypeScript monorepo,
 the 11-stage Blueprint as a tested stage-gated state machine, PostgreSQL +
 Prisma persistence with an append-only event log, approval-gated stage
 advancement, a Next.js app (portfolio dashboard, Create Brand wizard,
-blueprint view, approval inbox), and Claude-powered specialist agents: the
-CEO Orchestrator runs Discover research with Research/Retail/Product/Finance
-in parallel and consolidates the Opportunity Memo, and the Retail agent
-drafts outreach batches that send only after founder approval, idempotently.
+blueprint view, approval inbox), and Claude-powered specialist agents covering **every blueprint stage**: the
+CEO Orchestrator runs a per-stage plan (all ten specialists are wired in —
+Research, Retail, Product, Finance, Brand Builder, Creative Studio, Growth,
+Operations, Customer Support) and consolidates a stage report with a
+proceed/revise/park/reject recommendation; the Retail agent drafts outreach
+batches that send only after founder approval, idempotently; and the Weekly
+CEO Review briefs the founder across the whole portfolio.
 Set `ANTHROPIC_API_KEY` in `.env` for real agent output; without it agents
 run in labeled mock mode. Seed data ships the Camera95, Crossbody, Standard
 Dental, and Hold candidates.

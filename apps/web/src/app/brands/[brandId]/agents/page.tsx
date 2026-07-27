@@ -1,11 +1,16 @@
-import { llmMode, llmModel } from "@brand95/agents";
+import { llmMode, llmModel, STAGE_PLANS } from "@brand95/agents";
 import { prisma } from "@brand95/database";
-import { AGENTS, type AgentKey, type AgentResult } from "@brand95/domain";
+import {
+  AGENTS,
+  getStage,
+  type AgentKey,
+  type AgentResult,
+} from "@brand95/domain";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActionForm } from "@/components/action-form";
 import { StatusBadge } from "@/components/badges";
-import { draftOutreachAction, runDiscoverAction } from "@/lib/actions";
+import { draftOutreachAction, runStageAgentsAction } from "@/lib/actions";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // real agent runs can take minutes
@@ -45,24 +50,40 @@ export default async function BrandAgentsPage({
 
       <div className="grid cols-2" style={{ marginBottom: 22 }}>
         <div className="card">
-          <h3>Run Discover research</h3>
-          <p className="muted">
-            The CEO Orchestrator spawns Research, Retail, Product, and Finance
-            in parallel, saves each deliverable, attaches evidence to the
-            Discover gate, and consolidates the Opportunity Memo with a
-            proceed/revise/park/reject recommendation.
-            {brand.currentStageIndex !== 1 &&
-              " Available once the brand is in Stage 1 (Discover)."}
-          </p>
-          <ActionForm action={runDiscoverAction} className="inline-form">
-            <input type="hidden" name="brandId" value={brand.id} />
-            <button
-              className="btn primary"
-              disabled={brand.currentStageIndex !== 1 || brand.status !== "ACTIVE"}
-            >
-              Run Discover research
-            </button>
-          </ActionForm>
+          {(() => {
+            const plan = STAGE_PLANS[brand.currentStageIndex];
+            const stageDef = getStage(brand.currentStageIndex);
+            return (
+              <>
+                <h3>Run {stageDef.name} agents</h3>
+                <p className="muted">
+                  {plan ? (
+                    <>
+                      The CEO Orchestrator spawns{" "}
+                      {plan.specialists
+                        .map((s) => AGENTS[s.key].name)
+                        .join(", ")}{" "}
+                      in parallel, saves each deliverable, attaches evidence to
+                      this stage&apos;s gate, and consolidates{" "}
+                      <em>{plan.consolidatedTitle(brand.name)}</em> with a
+                      proceed/revise/park/reject recommendation.
+                    </>
+                  ) : (
+                    "Agents run from Stage 1 (Discover) onward — complete the Intake gate first."
+                  )}
+                </p>
+                <ActionForm action={runStageAgentsAction} className="inline-form">
+                  <input type="hidden" name="brandId" value={brand.id} />
+                  <button
+                    className="btn primary"
+                    disabled={!plan || brand.status !== "ACTIVE"}
+                  >
+                    Run {stageDef.name} agents
+                  </button>
+                </ActionForm>
+              </>
+            );
+          })()}
         </div>
         <div className="card">
           <h3>Draft retail outreach</h3>

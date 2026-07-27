@@ -67,15 +67,20 @@ Claude-powered specialist agents with a zero-credential mock mode. Contains
 the LLM access layer (structured JSON outputs validated by zod, refusal
 handling), per-agent system prompts, and the first two agent workflows:
 
-- **Discover research** (`workflows/discover.ts`): the CEO Orchestrator spawns
-  Research, Retail, Product, and Finance in parallel, saves each deliverable
-  as a versioned artifact, attaches evidence to the Discover gate criteria,
-  and consolidates the Opportunity Memo with a proceed/revise/park/reject
+- **Stage engine** (`workflows/engine.ts`): every blueprint stage from
+  Discover (1) through Systemize & Scale (10) has a plan — which specialists
+  run in parallel, what each delivers, and which gate criteria the deliverable
+  evidences. The CEO Orchestrator consolidates the results into one stage
+  document (Opportunity Memo, Validation Report, Brand Book Draft, Production
+  Approval Pack, Launch Readiness Report, …) with a proceed/revise/park/reject
   recommendation. Idempotent against double-runs; re-runs create new artifact
-  versions, never duplicates.
+  versions, never duplicates. All ten specialist agents are wired in.
 - **Retail outreach** (`workflows/outreach.ts`): drafts personalized emails
   behind a Level 1 batch approval; execution goes through the email adapter
   with an idempotency key per message so retries can never double-send.
+- **Weekly CEO Review** (`workflows/ceo-review.ts`): portfolio-wide founder
+  briefing — biggest bottleneck per brand, max three priorities each, overdue
+  approvals — stored as a versioned workspace-level artifact.
 
 Without `ANTHROPIC_API_KEY`, both run in mock mode with clearly labeled
 placeholder output, so the full flow stays demoable and testable.

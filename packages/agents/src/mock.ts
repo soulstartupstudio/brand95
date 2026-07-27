@@ -1,9 +1,10 @@
 import type { Brand } from "@brand95/database";
 import type { AgentKey } from "@brand95/domain";
 import type {
-  OpportunityMemo,
+  CeoReview,
   OutreachBatch,
   SpecialistOutput,
+  StageReport,
 } from "./output-schemas";
 
 /**
@@ -19,10 +20,15 @@ export function mockSpecialistOutput(
   brand: Brand,
 ): SpecialistOutput {
   const titles: Partial<Record<AgentKey, string>> = {
-    research: `${brand.name} — Customer & Competitor Research (draft)`,
-    retail: `${brand.name} — Retail Landscape Scan (draft)`,
-    product: `${brand.name} — Product Feasibility Brief (draft)`,
-    finance: `${brand.name} — Initial Unit Economics (draft)`,
+    research: `${brand.name} — Research Deliverable (draft)`,
+    retail: `${brand.name} — Retail Deliverable (draft)`,
+    product: `${brand.name} — Product Deliverable (draft)`,
+    finance: `${brand.name} — Finance Deliverable (draft)`,
+    brand_builder: `${brand.name} — Brand System Deliverable (draft)`,
+    creative_studio: `${brand.name} — Creative Deliverable (draft)`,
+    growth: `${brand.name} — Growth Deliverable (draft)`,
+    operations: `${brand.name} — Operations Deliverable (draft)`,
+    customer_support: `${brand.name} — Support Deliverable (draft)`,
   };
   return {
     summary: `Mock ${agentKey} deliverable for ${brand.name} (no API key configured).`,
@@ -38,20 +44,29 @@ export function mockSpecialistOutput(
   };
 }
 
-export function mockOpportunityMemo(brand: Brand): OpportunityMemo {
+export function mockStageReport(brand: Brand, title: string): StageReport {
   return {
-    summary: `Mock Opportunity Memo for ${brand.name}.`,
-    memo_markdown:
+    summary: `Mock ${title} for ${brand.name}.`,
+    report_markdown:
       MOCK_NOTE +
-      `# ${brand.name} Opportunity Memo (mock)\n\n## Opportunity\n${brand.concept}\n\n## Recommendation\nRevise — this memo was generated in mock mode and contains no real research.`,
+      `# ${title} (mock)\n\n## Context\n${brand.concept}\n\n## Recommendation\nRevise — this document was generated in mock mode and contains no real work.`,
     recommendation: "revise",
     recommendation_rationale:
       "Mock mode produced no real evidence; run with a configured model before deciding.",
-    missing_evidence: [
-      "All Discover gate evidence (mock mode gathered nothing)",
-    ],
+    missing_evidence: ["All gate evidence (mock mode gathered nothing)"],
     next_recommended_action:
-      "Configure ANTHROPIC_API_KEY and re-run the Discover research workflow.",
+      "Configure ANTHROPIC_API_KEY and re-run the stage agents.",
+  };
+}
+
+export function mockCeoReview(): CeoReview {
+  return {
+    summary: "Mock CEO review (no API key configured).",
+    briefing_markdown:
+      MOCK_NOTE +
+      "# Weekly CEO Review (mock)\n\nNo real portfolio analysis was performed. Configure ANTHROPIC_API_KEY and regenerate.",
+    next_recommended_action:
+      "Add ANTHROPIC_API_KEY to .env and regenerate the review.",
   };
 }
 
