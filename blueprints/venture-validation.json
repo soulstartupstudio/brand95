@@ -1,0 +1,92 @@
+{
+  "key": "venture-validation",
+  "name": "Venture validation (Soul Startup Studio)",
+  "kind": "validation",
+  "mission": "Kill or fund a startup idea on evidence, fast, with capped downside.",
+  "stages": [
+    {
+      "key": "intake",
+      "name": "0 · Intake",
+      "purpose": "Turn a loose idea into a structured candidate.",
+      "outputs": ["One-page concept memo", "Customer hypothesis", "Problem statement", "Business model hypothesis", "Founder conviction and constraints"],
+      "criteria": [
+        { "key": "memo", "label": "Concept memo written" },
+        { "key": "customer", "label": "Target customer and problem stated in one sentence" },
+        { "key": "why_us", "label": "Why this studio / founder should build it" },
+        { "key": "budget", "label": "Validation budget and time-box set" }
+      ]
+    },
+    {
+      "key": "problem",
+      "name": "1 · Problem discovery",
+      "purpose": "Prove the problem is real, frequent, and painful.",
+      "outputs": ["Interview guide", "Interview notes", "Problem evidence summary", "Competitor / substitute map"],
+      "criteria": [
+        { "key": "interviews", "label": "15 problem interviews with target customers", "target": 15 },
+        { "key": "pain", "label": "Majority describe the problem unprompted and pay (time/money) for a workaround today" },
+        { "key": "substitutes", "label": "10 substitutes / competitors reviewed", "target": 10 },
+        { "key": "memo", "label": "Problem memo: proceed / revise / park" }
+      ]
+    },
+    {
+      "key": "offer",
+      "name": "2 · Offer test",
+      "purpose": "Test whether a concrete offer earns behavioral commitment.",
+      "outputs": ["Landing page or deck", "Offer and price", "Experiment plan", "Results"],
+      "criteria": [
+        { "key": "landing", "label": "Offer is live (landing page, deck, or concierge)" },
+        { "key": "signals", "label": "100 qualified signups OR 10 written commitments", "target": 100 },
+        { "key": "price", "label": "Price resistance understood" },
+        { "key": "channel", "label": "One acquisition channel shows a repeatable signal" }
+      ]
+    },
+    {
+      "key": "wtp",
+      "name": "3 · Willingness to pay",
+      "purpose": "Money changes hands before the product exists.",
+      "outputs": ["Pre-sales / pilots", "Unit economics v1"],
+      "criteria": [
+        { "key": "paid", "label": "5 paying pilots or 25 refundable pre-orders", "target": 5 },
+        { "key": "economics", "label": "Unit economics low/base/high modelled" },
+        { "key": "fatal", "label": "No unresolved fatal legal, regulatory, or supply blocker" }
+      ]
+    },
+    {
+      "key": "mvp",
+      "name": "4 · MVP / pilot",
+      "purpose": "Deliver the promise manually or minimally and measure retention.",
+      "outputs": ["MVP scope", "Pilot delivery", "Retention and satisfaction data"],
+      "criteria": [
+        { "key": "delivered", "label": "Pilots delivered end to end" },
+        { "key": "retention", "label": "Retention / repeat usage above the pre-set bar" },
+        { "key": "ops", "label": "Delivery cost per unit known" }
+      ]
+    },
+    {
+      "key": "traction",
+      "name": "5 · Traction",
+      "purpose": "Repeatable acquisition with positive contribution margin.",
+      "outputs": ["Growth model", "Monthly P&L", "Hiring plan"],
+      "criteria": [
+        { "key": "mrr", "label": "Monthly revenue above the pre-set bar for 3 consecutive months" },
+        { "key": "cac", "label": "CAC payback under 12 months" },
+        { "key": "lead", "label": "A venture lead (not the founder) owns weekly execution" }
+      ]
+    },
+    {
+      "key": "decide",
+      "name": "6 · Fund / spin out / kill",
+      "purpose": "Make the capital and ownership decision.",
+      "outputs": ["Investment memo", "Cap table / ownership model", "12-month plan"],
+      "criteria": [
+        { "key": "memo", "label": "Investment memo with recommendation" },
+        { "key": "decision", "label": "Founder decision logged: fund, spin out, or kill" }
+      ]
+    }
+  ],
+  "kill_rules": [
+    "No behavioral evidence after two full experiment cycles → park.",
+    "Founder is the only person who can deliver it → redesign or kill.",
+    "Gross margin cannot plausibly exceed 50% → kill unless strategic."
+  ]
+}

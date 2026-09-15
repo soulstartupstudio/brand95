@@ -1,0 +1,145 @@
+{
+  "key": "brand-blueprint",
+  "name": "Brand95 Blueprint (owned DTC + B2B brands)",
+  "kind": "validation",
+  "mission": "Take a product idea to a €500k+ ARR brand with a brand manager, one stage-gate at a time. Evidence before expansion.",
+  "portfolio_rule": "One active build, one validation project. Warn when the portfolio exceeds this.",
+  "stages": [
+    {
+      "key": "intake",
+      "name": "0 · Intake",
+      "purpose": "Convert a loose idea into a structured brand candidate.",
+      "outputs": ["Codename", "Product concept", "Customer hypothesis", "Price range", "Starting market", "D2C and retail hypothesis", "Founder conviction statement"],
+      "criteria": [
+        { "key": "form", "label": "Intake form complete" },
+        { "key": "spend", "label": "Founder approves research time/spend" }
+      ]
+    },
+    {
+      "key": "discover",
+      "name": "1 · Discover",
+      "purpose": "Determine whether the opportunity deserves validation.",
+      "outputs": ["Opportunity memo: proceed / revise / park / reject", "Competitor map", "Price architecture", "Unit economics low/base/high"],
+      "criteria": [
+        { "key": "signals", "label": "15 customer signals or interviews", "target": 15 },
+        { "key": "retail", "label": "10 retailer/buyer signals (if retail plausible)", "target": 10 },
+        { "key": "competitors", "label": "10 competitors or substitutes reviewed", "target": 10 },
+        { "key": "margin", "label": "Plausible route to gross margin" },
+        { "key": "blocker", "label": "No fatal regulatory or supply-chain blocker" },
+        { "key": "approval", "label": "Founder approves opportunity memo" }
+      ]
+    },
+    {
+      "key": "validate",
+      "name": "2 · Validate",
+      "purpose": "Behavioral evidence before inventory or build cost.",
+      "outputs": ["Validation plan", "Landing page / pre-order / retailer test", "Validation report"],
+      "criteria": [
+        { "key": "evidence", "label": "100 qualified signups OR 25 paid reservations OR 10 retailer EOIs with 3 written opening-order indications", "target": 100 },
+        { "key": "price", "label": "Price resistance understood" },
+        { "key": "channel", "label": "One channel shows traction" },
+        { "key": "approval", "label": "Founder approves build" }
+      ]
+    },
+    {
+      "key": "brand",
+      "name": "3 · Build brand",
+      "purpose": "A recognizable, ownable, commercially usable brand system.",
+      "outputs": ["Name + availability checks", "Positioning", "Story", "Visual identity", "Packaging architecture", "Brand guidelines"],
+      "criteria": [
+        { "key": "five_second", "label": "Understood in 5 seconds, recognizable from 5 metres" },
+        { "key": "legal", "label": "Name and legal checks logged" },
+        { "key": "files", "label": "Production-ready files exist or are assigned" },
+        { "key": "approval", "label": "Founder approves brand system" }
+      ]
+    },
+    {
+      "key": "product",
+      "name": "4 · Hero product",
+      "purpose": "Finalize one product worth building the brand around.",
+      "outputs": ["PRD", "Supplier shortlist", "Golden sample", "Landed cost by volume tier", "QC and compliance checklists", "Production plan"],
+      "criteria": [
+        { "key": "sample", "label": "Golden sample approved" },
+        { "key": "landed", "label": "Landed cost verified (freight, duties, packaging, fees, returns, fulfilment)" },
+        { "key": "plan", "label": "Production and QC plan approved" },
+        { "key": "mvo", "label": "Minimum viable order supported by validation evidence" }
+      ]
+    },
+    {
+      "key": "store",
+      "name": "5 · Buying experience",
+      "purpose": "Make the brand genuinely purchasable and credible.",
+      "outputs": ["Shopify storefront", "PDP", "Policies", "Lifecycle emails", "Analytics", "Wholesale materials"],
+      "criteria": [
+        { "key": "test_order", "label": "End-to-end test order succeeds" },
+        { "key": "mobile", "label": "Mobile QA passes" },
+        { "key": "analytics", "label": "Analytics events verified" },
+        { "key": "placeholders", "label": "No placeholder content remains" }
+      ]
+    },
+    {
+      "key": "launch",
+      "name": "6 · Launch · first 100 customers",
+      "purpose": "Prove strangers will buy and find repeatable demand signals.",
+      "outputs": ["Launch plan", "Source-of-purchase data", "Review and UGC set", "Contribution margin"],
+      "criteria": [
+        { "key": "customers", "label": "100 paying customers", "target": 100 },
+        { "key": "reviews", "label": "20 substantive reviews", "target": 20 },
+        { "key": "ugc", "label": "10 usable UGC assets", "target": 10 },
+        { "key": "contribution", "label": "Contribution margin measured" },
+        { "key": "channel", "label": "One acquisition path shows promise" }
+      ]
+    },
+    {
+      "key": "retail",
+      "name": "7 · Retail validation",
+      "purpose": "Establish retail as a measurable channel.",
+      "outputs": ["Wholesale price list", "Line sheet", "Sample kit", "Prospect database", "Outreach sequences"],
+      "criteria": [
+        { "key": "prospects", "label": "50 qualified retailer prospects contacted", "target": 50 },
+        { "key": "stockists", "label": "10 paying stockists", "target": 10 },
+        { "key": "reorders", "label": "3 reorders or sell-through evidence", "target": 3 },
+        { "key": "economics", "label": "Wholesale unit economics work" }
+      ]
+    },
+    {
+      "key": "growth",
+      "name": "8 · Repeatable growth",
+      "purpose": "Turn isolated wins into a predictable engine.",
+      "outputs": ["Channel P&L", "Experiment backlog", "CRM/lifecycle", "Inventory and cash plan"],
+      "criteria": [
+        { "key": "channel", "label": "At least one channel is repeatable" },
+        { "key": "contribution", "label": "Positive contribution margin in base case" },
+        { "key": "cash", "label": "Inventory and cash planning controlled" },
+        { "key": "approval", "label": "Founder approves scaling spend" }
+      ]
+    },
+    {
+      "key": "ecosystem",
+      "name": "9 · Brand ecosystem",
+      "purpose": "Expand assortment only after the hero is validated.",
+      "outputs": ["Mini opportunity memo per SKU", "Unit economics per SKU"],
+      "criteria": [
+        { "key": "skus", "label": "3 commercially viable SKUs or a clearly profitable focused assortment", "target": 3 },
+        { "key": "complexity", "label": "Inventory complexity manageable" },
+        { "key": "repeat", "label": "Cross-sell or repeat behavior proven" }
+      ]
+    },
+    {
+      "key": "systemize",
+      "name": "10 · Systemize and scale",
+      "purpose": "Operate without founder intervention.",
+      "outputs": ["Brand manager", "SOP library", "KPI dashboard", "Monthly operating review", "Risk register", "Annual plan"],
+      "criteria": [
+        { "key": "manager", "label": "Brand manager owns weekly execution" },
+        { "key": "four_weeks", "label": "Runs 4 weeks without founder operational intervention" },
+        { "key": "owners", "label": "Key processes have owners and documented fallbacks" }
+      ]
+    }
+  ],
+  "kill_rules": [
+    "Validation gate not met after two experiment cycles → park.",
+    "Gross margin below 50% D2C or 35% wholesale in base case → revise product or kill.",
+    "A second brand cannot enter Build while one is already in Build → queue it."
+  ]
+}

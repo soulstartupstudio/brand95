@@ -1,0 +1,27 @@
+{
+  "name": "jarvis-command-center",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Founder command center: one operating system for Custom95, Brand95, Soul Startup Studio, Student95 and PortaPay. Departments, ventures, brands, validation gates, pipeline, outreach, approvals and agents.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "bin": {
+    "jarvis": "./bin/jarvis"
+  },
+  "scripts": {
+    "jarvis": "node --no-warnings=ExperimentalWarning src/cli.ts",
+    "init": "node --no-warnings=ExperimentalWarning src/cli.ts init",
+    "seed": "node --no-warnings=ExperimentalWarning src/cli.ts seed",
+    "serve": "node --no-warnings=ExperimentalWarning src/cli.ts serve",
+    "brief": "node --no-warnings=ExperimentalWarning src/cli.ts brief",
+    "next": "node --no-warnings=ExperimentalWarning src/cli.ts next",
+    "test": "node --no-warnings=ExperimentalWarning --test \"tests/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.9.0"
+  }
+}

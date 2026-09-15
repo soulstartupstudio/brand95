@@ -1,0 +1,26 @@
+{
+  "key": "dept-sales",
+  "name": "Sales department",
+  "kind": "department",
+  "mission": "Fill the pipeline with strategic accounts and convert them into recurring setups (brandshops, portals, key accounts).",
+  "kpis": [
+    { "key": "pipeline_value", "label": "Weighted pipeline (EUR)", "direction": "up" },
+    { "key": "new_qualified_leads", "label": "New qualified leads / week", "direction": "up", "target": 10 },
+    { "key": "outreach_sent", "label": "Outreach sent / week", "direction": "up", "target": 40 },
+    { "key": "reply_rate", "label": "Reply rate %", "direction": "up", "target": 8 },
+    { "key": "meetings_booked", "label": "Meetings booked / week", "direction": "up", "target": 3 },
+    { "key": "win_rate", "label": "Win rate %", "direction": "up" },
+    { "key": "recurring_revenue_share", "label": "Recurring revenue share %", "direction": "up", "target": 40 }
+  ],
+  "cadence": [
+    { "key": "weekly_pipeline_review", "label": "Weekly pipeline review", "every": "week" },
+    { "key": "outreach_batch", "label": "Outreach batch approved and sent", "every": "week" },
+    { "key": "key_account_check", "label": "Key account check-in", "every": "month" }
+  ],
+  "health_checks": [
+    { "key": "leads_stale", "label": "No lead has been idle in 'contacted' for more than 7 days without follow-up" },
+    { "key": "queue_non_empty", "label": "At least 20 researched leads are queued for outreach" },
+    { "key": "icp_defined", "label": "ICP and segment angles are written down and current" }
+  ],
+  "playbooks": ["lead-research", "outreach-writer", "proposal-builder"]
+}

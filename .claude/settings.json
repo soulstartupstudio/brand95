@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run jarvis *)",
+      "Bash(npm run jarvis -- *)",
+      "Bash(./bin/jarvis *)",
+      "Bash(node --no-warnings=ExperimentalWarning src/cli.ts *)",
+      "Bash(npm test)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run serve)"
+    ]
+  }
+}

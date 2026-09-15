@@ -1,0 +1,24 @@
+{
+  "key": "dept-operations",
+  "name": "Operations department",
+  "kind": "department",
+  "mission": "Deliver on time, in full, at margin, without founder intervention.",
+  "kpis": [
+    { "key": "otif", "label": "On-time in-full %", "direction": "up", "target": 95 },
+    { "key": "gross_margin", "label": "Gross margin %", "direction": "up", "target": 35 },
+    { "key": "exceptions", "label": "Open exceptions", "direction": "down", "target": 0 },
+    { "key": "founder_hours", "label": "Founder hours in ops / week", "direction": "down", "target": 2 },
+    { "key": "supplier_score", "label": "Avg supplier scorecard (1-5)", "direction": "up", "target": 4 }
+  ],
+  "cadence": [
+    { "key": "weekly_ops_review", "label": "Weekly operating report", "every": "week" },
+    { "key": "supplier_scorecards", "label": "Supplier scorecards updated", "every": "month" },
+    { "key": "sop_review", "label": "SOP library review", "every": "quarter" }
+  ],
+  "health_checks": [
+    { "key": "sops_owned", "label": "Every recurring process has an SOP and an owner" },
+    { "key": "no_silent_failures", "label": "All failed automations are visible and assigned" },
+    { "key": "exceptions_triaged", "label": "Exceptions older than 48h are escalated" }
+  ],
+  "playbooks": ["sop-writer", "ops-review"]
+}

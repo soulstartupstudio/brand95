@@ -1,0 +1,51 @@
+{
+  "key": "offer-validation",
+  "name": "Offer validation (new service / product line inside an existing company)",
+  "kind": "validation",
+  "mission": "Validate a new offer with existing clients before building infrastructure for it.",
+  "stages": [
+    {
+      "key": "define",
+      "name": "0 · Define",
+      "purpose": "One-page offer: who, what, price, why now.",
+      "outputs": ["Offer one-pager", "Target segment", "Price hypothesis"],
+      "criteria": [
+        { "key": "onepager", "label": "Offer one-pager written" },
+        { "key": "segment", "label": "Target segment and 10 named target accounts" , "target": 10 }
+      ]
+    },
+    {
+      "key": "test",
+      "name": "1 · Sell it",
+      "purpose": "Pitch to real accounts before building.",
+      "outputs": ["Pitch deck", "Outreach batch", "Objection log"],
+      "criteria": [
+        { "key": "pitched", "label": "10 accounts pitched", "target": 10 },
+        { "key": "signed", "label": "3 signed or verbally committed", "target": 3 },
+        { "key": "objections", "label": "Top objections logged with answers" }
+      ]
+    },
+    {
+      "key": "deliver",
+      "name": "2 · Deliver manually",
+      "purpose": "Deliver the first three by hand; write the SOP while doing it.",
+      "outputs": ["SOP v1", "Margin per delivery", "Client feedback"],
+      "criteria": [
+        { "key": "delivered", "label": "3 deliveries done", "target": 3 },
+        { "key": "margin", "label": "Margin per delivery meets target" },
+        { "key": "sop", "label": "SOP v1 exists" }
+      ]
+    },
+    {
+      "key": "systemize",
+      "name": "3 · Systemize",
+      "purpose": "Hand it to an owner and productize.",
+      "outputs": ["Owner assigned", "Pricing card", "Automation coverage"],
+      "criteria": [
+        { "key": "owner", "label": "Non-founder owner assigned" },
+        { "key": "recurring", "label": "Recurring revenue setup live" }
+      ]
+    }
+  ],
+  "kill_rules": ["Fewer than 3 commitments after 10 pitches → park and reposition."]
+}

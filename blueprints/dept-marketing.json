@@ -1,0 +1,23 @@
+{
+  "key": "dept-marketing",
+  "name": "Marketing department",
+  "kind": "department",
+  "mission": "Make the positioning obvious to the right accounts and generate inbound demand.",
+  "kpis": [
+    { "key": "inbound_leads", "label": "Inbound qualified leads / month", "direction": "up", "target": 8 },
+    { "key": "content_published", "label": "Content pieces published / week", "direction": "up", "target": 3 },
+    { "key": "site_conversion", "label": "Site conversion %", "direction": "up", "target": 2 },
+    { "key": "case_studies", "label": "Published case studies", "direction": "up", "target": 6 },
+    { "key": "newsletter_growth", "label": "Newsletter net growth / month", "direction": "up" }
+  ],
+  "cadence": [
+    { "key": "weekly_content", "label": "Weekly content plan approved", "every": "week" },
+    { "key": "monthly_review", "label": "Monthly demand review", "every": "month" }
+  ],
+  "health_checks": [
+    { "key": "positioning_current", "label": "Positioning and messaging hierarchy are current" },
+    { "key": "case_study_pipeline", "label": "At least one case study in production" },
+    { "key": "tracking_works", "label": "Attribution on inbound leads works" }
+  ],
+  "playbooks": ["content-writer", "case-study-builder"]
+}
