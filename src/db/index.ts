@@ -20,8 +20,15 @@ export function openDb(path: string = dbPath()): DatabaseSync {
   if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });
   const db = new DatabaseSync(path);
   db.exec(readFileSync(resolve(here, "schema.sql"), "utf8"));
+  migrate(db);
   _db = db;
   return db;
+}
+
+/** Additive migrations for databases created before a column existed. */
+function migrate(db: DatabaseSync): void {
+  const cols = db.prepare("PRAGMA table_info(initiatives)").all() as { name: string }[];
+  if (!cols.some((c) => c.name === "goal_id")) db.exec("ALTER TABLE initiatives ADD COLUMN goal_id TEXT");
 }
 
 export function closeDb(): void {

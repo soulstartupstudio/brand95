@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS initiatives (
   priority INTEGER NOT NULL DEFAULT 2,   -- 1 high, 2 normal, 3 low
   owner TEXT NOT NULL DEFAULT 'founder',
   due TEXT,
+  goal_id TEXT,
   created_at TEXT NOT NULL,
   done_at TEXT
 );
@@ -204,3 +205,33 @@ CREATE INDEX IF NOT EXISTS idx_leads_unit ON leads(unit_id, status);
 CREATE INDEX IF NOT EXISTS idx_outreach_lead ON outreach(lead_id);
 CREATE INDEX IF NOT EXISTS idx_approvals_status ON approvals(status);
 CREATE INDEX IF NOT EXISTS idx_events_ts ON events(ts);
+
+CREATE TABLE IF NOT EXISTS goals (
+  id TEXT PRIMARY KEY,
+  company_id TEXT NOT NULL REFERENCES companies(id),
+  unit_id TEXT REFERENCES units(id),
+  key TEXT NOT NULL,
+  label TEXT NOT NULL,
+  horizon TEXT NOT NULL DEFAULT '12m',    -- 12m | 36m
+  metric_key TEXT,                        -- optional: pull current from metrics on unit_id
+  baseline REAL,
+  current REAL,
+  target REAL NOT NULL,
+  unit_label TEXT,                        -- EUR, %, brands, months, hours/week
+  direction TEXT NOT NULL DEFAULT 'up',   -- up | down
+  start TEXT NOT NULL,                    -- YYYY-MM-DD
+  deadline TEXT NOT NULL,                 -- YYYY-MM-DD
+  status TEXT NOT NULL DEFAULT 'active',  -- active | achieved | dropped
+  note TEXT,
+  updated_at TEXT NOT NULL,
+  UNIQUE(company_id, key)
+);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id TEXT PRIMARY KEY,
+  session TEXT NOT NULL,
+  role TEXT NOT NULL,
+  content TEXT NOT NULL,                  -- json content blocks
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_chat_session ON chat_messages(session, created_at);

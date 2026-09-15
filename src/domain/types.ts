@@ -24,7 +24,7 @@ export interface Task {
 
 export interface Initiative {
   id: string; unit_id: string; title: string; objective: string | null; status: string; priority: number;
-  owner: string; due: string | null; created_at: string; done_at: string | null;
+  owner: string; due: string | null; goal_id: string | null; created_at: string; done_at: string | null;
 }
 
 export interface Approval {
@@ -87,4 +87,10 @@ export interface Blueprint {
   playbooks?: string[];
   kill_rules?: string[];
   portfolio_rule?: string;
+}
+
+export interface Goal {
+  id: string; company_id: string; unit_id: string | null; key: string; label: string; horizon: "12m" | "36m";
+  metric_key: string | null; baseline: number | null; current: number | null; target: number; unit_label: string | null;
+  direction: "up" | "down"; start: string; deadline: string; status: "active" | "achieved" | "dropped"; note: string | null; updated_at: string;
 }

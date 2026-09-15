@@ -14,6 +14,9 @@ Unit ref (e.g. `custom95/sales`), segment (`fmcg`, `tech`, `travel`, `agency`, `
 - **Student95**: Dutch student associations, boards, lustrum committees, study associations. Signal: board change, lustrum year, intro week.
 - **Brand retail (Brand95)**: independent retailers and chains matching the brand's audience; see the brand's notes for the ideal retailer profile.
 
+## Craft
+Use the `prospecting` skill for sourcing patterns and the `lead-scoring` skill for the ICP/score model. Scores go into `--fit`.
+
 ## Procedure
 1. `npm run jarvis -- agent start lead-researcher <unit> "Research <count> <segment> leads"`.
 2. `npm run jarvis -- leads <unit> --json` to avoid duplicates.

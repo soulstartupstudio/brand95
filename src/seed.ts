@@ -7,6 +7,7 @@ import * as P from "./services/portfolio.ts";
 import * as W from "./services/work.ts";
 import * as L from "./services/pipeline.ts";
 import * as A from "./services/approvals.ts";
+import { upsertGoal, listGoals } from "./services/goals.ts";
 
 export function seed(opts: { demo?: boolean } = {}): { companies: number; units: number; tasks: number; leads: number } {
   const before = counts();
@@ -57,10 +58,29 @@ export function seed(opts: { demo?: boolean } = {}): { companies: number; units:
   starterTask("brand95/hold", "Complete Stage 0 intake form", { priority: 3 });
   starterTask("portapay/validation", "Write the one-page concept memo and set a validation time-box", { priority: 2 });
 
+  seedGoals();
   if (opts.demo) demoData();
 
   const after = counts();
   return { companies: after.companies - before.companies, units: after.units - before.units, tasks: after.tasks - before.tasks, leads: after.leads - before.leads };
+}
+
+/** North-star goals as measurable targets. Current values stay empty until the founder records them. */
+function seedGoals(): void {
+  if (listGoals().length) return;
+  const today = new Date();
+  const plus = (months: number) => { const d = new Date(today); d.setMonth(d.getMonth() + months); return d.toISOString().slice(0, 10); };
+  const y12 = plus(12), y36 = plus(36);
+  upsertGoal({ company: "custom95", key: "revenue", label: "Annual revenue", target: 3_000_000, unit_label: "EUR", horizon: "36m", deadline: y36, unit: "custom95/finance" });
+  upsertGoal({ company: "custom95", key: "net_margin", label: "Net margin", target: 12, unit_label: "%", horizon: "12m", deadline: y12, unit: "custom95/finance", metric_key: "net_margin" });
+  upsertGoal({ company: "custom95", key: "recurring_share", label: "Recurring revenue share (brandshops, portals, key accounts)", target: 40, unit_label: "%", horizon: "12m", deadline: y12, unit: "custom95/sales", metric_key: "recurring_revenue_share" });
+  upsertGoal({ company: "custom95", key: "founder_hours", label: "Founder hours in operations per week", target: 2, unit_label: "h/week", direction: "down", horizon: "36m", deadline: y36, unit: "custom95/operations", metric_key: "founder_hours" });
+  upsertGoal({ company: "brand95", key: "brands_500k", label: "Brands above €500k ARR with a brand manager", target: 2, unit_label: "brands", horizon: "36m", deadline: y36, baseline: 0 });
+  upsertGoal({ company: "brand95", key: "first_launch", label: "First brand launched (100 paying customers)", target: 1, unit_label: "brand", horizon: "12m", deadline: y12, baseline: 0 });
+  upsertGoal({ company: "sss", key: "ventures_traction", label: "Startups launched with real traction", target: 2, unit_label: "startups", horizon: "36m", deadline: y36, baseline: 0 });
+  upsertGoal({ company: "sss", key: "ventures_validated", label: "Ideas validated to a fund / kill decision", target: 3, unit_label: "decisions", horizon: "12m", deadline: y12, baseline: 0 });
+  upsertGoal({ company: "student95", key: "active_associations", label: "Active student associations ordering each board year", target: 25, unit_label: "associations", horizon: "12m", deadline: y12 });
+  upsertGoal({ company: "portapay", key: "paying_pilots", label: "Paying pilots before any platform build", target: 5, unit_label: "pilots", horizon: "12m", deadline: y12, baseline: 0, unit: "portapay/validation" });
 }
 
 function starterTask(unit: string, title: string, opts: { priority?: number; owner?: string } = {}): void {

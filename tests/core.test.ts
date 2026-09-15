@@ -108,3 +108,45 @@ test("metrics upsert per period and KPI misses show up", () => {
   const nx = nextForUnit(P.requireUnit("custom95/sales"));
   assert.ok(nx.actions.some((a) => /KPIs off target/.test(a.title)));
 });
+
+// --- goals & cockpit ---------------------------------------------------------
+import * as G from "../src/services/goals.ts";
+import { cockpit } from "../src/engine/cockpit.ts";
+
+test("goal tracking: no data, on track, behind, achieved", () => {
+  const start = new Date(Date.now() - 100 * 86400_000).toISOString().slice(0, 10);
+  const deadline = new Date(Date.now() + 100 * 86400_000).toISOString().slice(0, 10);
+  const g = G.upsertGoal({ company: "custom95", key: "test_goal", label: "Test", target: 100, baseline: 0, start, deadline });
+  assert.equal(G.trackGoal(g).status, "no_data");
+  G.setGoalProgress("custom95/test_goal", 50);
+  assert.equal(G.trackGoal(G.getGoal("custom95/test_goal")!).status, "on_track"); // expected ≈ 0.5
+  G.setGoalProgress("custom95/test_goal", 20);
+  assert.equal(G.trackGoal(G.getGoal("custom95/test_goal")!).status, "off_track");
+  G.setGoalProgress("custom95/test_goal", 100);
+  assert.equal(G.trackGoal(G.getGoal("custom95/test_goal")!).status, "achieved");
+  assert.equal(G.getGoal("custom95/test_goal")!.status, "achieved");
+});
+
+test("goal linked to a metric reads the latest metric value", () => {
+  const start = new Date(Date.now() - 10 * 86400_000).toISOString().slice(0, 10);
+  const deadline = new Date(Date.now() + 355 * 86400_000).toISOString().slice(0, 10);
+  const g = G.upsertGoal({ company: "custom95", key: "margin_test", label: "Margin", target: 12, baseline: 0, start, deadline, unit: "custom95/finance", metric_key: "net_margin" });
+  P.recordMetric("custom95/finance", "net_margin", 9, "2026-09");
+  const t = G.trackGoal(G.getGoal(g.id)!);
+  assert.equal(t.current, 9);
+  assert.equal(t.status, "ahead");
+});
+
+test("cockpit computes levels, on-track score and drift", () => {
+  const c = cockpit();
+  assert.equal(c.companies.length, 5);
+  const custom95 = c.companies.find((x) => x.slug === "custom95")!;
+  assert.ok(custom95.level >= 0 && custom95.level <= 5);
+  assert.ok(custom95.goals.length >= 2);
+  assert.ok(typeof c.score === "number");
+  assert.ok(c.drift.some((d) => /no current value/.test(d)));
+});
+
+test("seeded goals exist for every company", () => {
+  for (const co of P.listCompanies()) assert.ok(G.listGoals(co.id).length >= 1, co.slug);
+});

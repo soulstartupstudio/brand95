@@ -14,6 +14,8 @@ import * as A from "./services/approvals.ts";
 import * as L from "./services/pipeline.ts";
 import { nextForPortfolio, nextForUnit } from "./engine/next.ts";
 import { founderBrief } from "./engine/brief.ts";
+import { cockpit } from "./engine/cockpit.ts";
+import * as G from "./services/goals.ts";
 import { seed } from "./seed.ts";
 import { serve } from "./server/index.ts";
 
@@ -26,6 +28,10 @@ jarvis — founder command center
     jarvis status [company]                       one-screen status of everything
     jarvis brief [company] [--out file.md]        founder brief (markdown)
     jarvis next [unit|company] [--json]           ranked next actions (the co-founder engine)
+    jarvis cockpit [--json]                       levels, goals on-track, focus, drift
+    jarvis goals [company] | jarvis goal <company> <key> "label" --target n --deadline YYYY-MM-DD [--horizon 12m|36m] [--unit ref] [--metric key] [--baseline n] [--current n] [--unit-label EUR] [--down]
+    jarvis goal-progress <company/key> <current> [--note ..]
+    jarvis chat "message" [--deep] [--session name]   talk to Jarvis from the terminal (needs ANTHROPIC_API_KEY)
     jarvis companies | units [company]            list
     jarvis unit <company/slug>                    unit detail
     jarvis unit add <company> <slug> "Name" --kind department|venture|brand|concept --blueprint <key> [--mission ..]
@@ -80,7 +86,7 @@ jarvis — founder command center
 
 type Opts = Record<string, string | boolean | undefined>;
 
-function main(argv: string[]): void {
+async function main(argv: string[]): Promise<void> {
   const { values, positionals } = parseArgs({
     args: argv,
     allowPositionals: true,
@@ -99,6 +105,8 @@ function main(argv: string[]): void {
       research: { type: "string" }, subject: { type: "string" }, step: { type: "string" }, channel: { type: "string" },
       ids: { type: "string" }, "external-id": { type: "string" }, limit: { type: "string" }, reason: { type: "string" },
       blueprint: { type: "string" }, mission: { type: "string" },
+      horizon: { type: "string" }, unit: { type: "string" }, baseline: { type: "string" }, current: { type: "string" }, "unit-label": { type: "string" }, down: { type: "boolean" }, deadline: { type: "string" },
+      deep: { type: "boolean" }, session: { type: "string" }, goal: { type: "string" },
     },
   });
   const o = values as Opts;
@@ -132,6 +140,33 @@ function main(argv: string[]): void {
       for (const a of r.top) console.log(`  1 [${a.company}/${a.unit}] ${a.title}\n      why: ${a.why}${a.command ? `\n      run: ${a.command}` : ""}`);
       console.log("\nBy unit");
       for (const u of r.units) { if (u.actions.length) { console.log(`  ${u.company}/${u.unit.slug} (score ${u.score})`); for (const a of u.actions.slice(0, 3)) console.log(`    ${a.priority} ${a.title}`); } }
+      return;
+    }
+    case "cockpit": {
+      const c = cockpit();
+      if (o.json) return out(c);
+      console.log(`COCKPIT · ${c.generated_at.slice(0, 10)} · on-track score ${c.score === null ? "n/a (no measured goals)" : c.score + "%"} · ${c.approvals_pending} approvals · ${c.urgent} urgent`);
+      for (const w of [...c.warnings, ...c.drift]) console.log(`  ! ${w}`);
+      for (const co of c.companies) {
+        console.log(`\n${co.name.toUpperCase()}  level ${co.level}/5 ${co.level_label} · ${co.status.replace("_", " ")}`);
+        for (const g of co.goals) console.log(`  goal  ${g.status.padEnd(9)} ${g.goal.label} → ${g.goal.target}${g.goal.unit_label ? " " + g.goal.unit_label : ""} by ${g.goal.deadline}${g.current !== null ? ` (now ${g.current}, ${Math.round((g.progress ?? 0) * 100)}% vs expected ${Math.round(g.expected * 100)}%)` : " (no data)"}`);
+        for (const u of co.units) console.log(`  unit  L${u.level} ${u.unit.name.padEnd(22)} ${u.detail}`);
+        for (const f of co.focus) console.log(`  focus [${f.unit}] ${f.title}`);
+        if (co.alignment.total) console.log(`  align ${co.alignment.linked}/${co.alignment.total} initiatives linked to a goal`);
+      }
+      return;
+    }
+    case "goals": {
+      const rows = G.trackAll(args[0]);
+      if (o.json) return out(rows);
+      for (const g of rows) console.log(`${g.goal.id.slice(-6)} ${g.status.padEnd(9)} ${g.goal.horizon} ${g.goal.label.padEnd(60)} ${g.current ?? "-"} / ${g.goal.target} ${g.goal.unit_label ?? ""} by ${g.goal.deadline}`);
+      return;
+    }
+    case "goal": return out(G.upsertGoal({ company: args[0], key: args[1], label: args[2] ?? args[1], target: Number(str("target")), deadline: str("deadline")!, horizon: (str("horizon") as never) ?? "12m", unit: str("unit"), metric_key: str("metric"), baseline: num("baseline"), current: num("current"), unit_label: str("unit-label"), direction: o.down ? "down" : "up", note: str("note") }));
+    case "goal-progress": return out(G.setGoalProgress(args[0], Number(args[1]), str("note")));
+    case "chat": {
+      const { chatToStdout } = await import("./server/chat.ts");
+      await chatToStdout(args.join(" "), { deep: !!o.deep, session: str("session") ?? "cli" });
       return;
     }
     case "companies": { const rows = P.listCompanies(); if (o.json) return out(rows); for (const c of rows) console.log(`${c.slug.padEnd(12)} ${c.kind.padEnd(16)} ${c.name}`); return; }
@@ -202,7 +237,7 @@ function main(argv: string[]): void {
     case "done": return out(W.setTaskStatus(args[0], "done", str("note")));
     case "task-status": return out(W.setTaskStatus(args[0], args[1] as never, str("note")));
     case "initiatives": return out(W.listInitiatives(args[0]));
-    case "initiative": return out(W.addInitiative(args[0], args[1], { objective: str("objective"), due: str("due"), priority: num("p"), owner: str("owner") }));
+    case "initiative": return out(W.addInitiative(args[0], args[1], { objective: str("objective"), due: str("due"), priority: num("p"), owner: str("owner"), goal_id: str("goal") ? G.getGoal(str("goal")!)?.id : undefined }));
     case "decisions": return out(W.listDecisions(args[0], str("status")));
     case "decision": return out(W.addDecision(args[0] === "-" ? null : args[0], args[1], { context: str("context"), options: str("options")?.split("|").map((s) => s.trim()) }));
     case "decide": return out(W.decide(args[0], args[1], str("why")));
@@ -329,4 +364,4 @@ function printStatus(scope: string | undefined, json: boolean): void {
   }
 }
 
-main(process.argv.slice(2));
+await main(process.argv.slice(2));

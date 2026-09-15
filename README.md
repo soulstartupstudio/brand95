@@ -2,14 +2,15 @@
 
 One operating system for all of Dex's companies: **Custom95** (departments: sales, operations, finance, marketing, plus new offers), **Brand95** (owned brands on the Brand95 Blueprint), **Soul Startup Studio** (venture validation), **Student95** and **PortaPay**.
 
-It does four things:
+It does five things:
 
+0. **Talks** — a streaming chat with Jarvis in the dashboard (and `jarvis chat` in the terminal) that reads the live state and can act on it through tools, inside the same approval gates.
 1. **Shows state** — every company, every unit, its stage, its gate, its KPIs, its pipeline, on one screen.
 2. **Decides what's next** — a deterministic next-step engine plus a Claude co-founder that proposes one step per unit and waits for your review.
 3. **Gates execution** — nothing external (outreach, spend, stage advances, publishing) happens without an approval in the inbox.
 4. **Runs agents** — lead research, outreach writing/sending, validation research, experiment design, writing, finance and ops reviews, all inside Claude Code, all logged.
 
-No runtime dependencies. Node ≥ 22.18 (built-in SQLite and TypeScript). Local-first: one SQLite file.
+One runtime dependency (`@anthropic-ai/sdk`, for chat). Node ≥ 22.18 (built-in SQLite and TypeScript). Local-first: one SQLite file.
 
 ## Quick start
 
@@ -17,9 +18,31 @@ No runtime dependencies. Node ≥ 22.18 (built-in SQLite and TypeScript). Local-
 npm install                 # dev tooling only (typescript)
 npm run init                # creates data/jarvis.db
 npm run seed                # loads the real portfolio structure (add --demo for sample data)
-npm run serve               # dashboard at http://127.0.0.1:4795
+export ANTHROPIC_API_KEY=sk-ant-…   # only needed for chat
+npm run serve               # dashboard at http://127.0.0.1:4795 (Cockpit is the home view; press / to talk)
 npm run jarvis -- status    # or: ./bin/jarvis status
+npm run jarvis -- cockpit   # levels, goals on-track, focus, drift
+npm run jarvis -- chat "Where am I off track?"
 ```
+
+## Cockpit
+
+The home view answers four questions:
+
+| Question | How it is computed |
+|---|---|
+| Where am I? | Every company gets a **level 0–5** (Idea → Validating → Building → Operating → Scaling → Systemized): validation units by stage and gate progress, departments by KPI coverage and KPIs on target. |
+| Am I on track? | Every North Star is a **goal** with a target, deadline and current value. Progress is compared with the linear expectation for today: ahead / on track / behind / off track / overdue. Goals linked to a KPI (`metric_key`) update themselves when the metric is recorded. The portfolio score is the share of measured goals on track. |
+| Where does focus go? | The next-step engine's priority-1 actions per company, plus the heat dot per unit. |
+| Am I still aligned? | **Drift** checks: companies without goals, initiatives not linked to a goal, active units with no goal above them, goals with no data. |
+
+Seeded goals mirror the North Stars (Custom95 €3M / 12% margin / 40% recurring / ≤2 founder ops hours; Brand95 first launch and two €500k brands; SSS three validated decisions and two startups with traction; Student95 25 associations; PortaPay 5 paying pilots). Current values start empty: record them from the cockpit, with `jarvis goal-progress custom95/revenue 1450000`, or just tell Jarvis in chat.
+
+## Talking to Jarvis
+
+The chat drawer (button bottom-right, or press `/`) streams the answer token by token over Server-Sent Events. It sees the live cockpit state in its system prompt and has tools for tasks, initiatives, leads, drafts, notes, gate evidence, experiments, KPIs, goal progress, approval requests and (only when you say so) approval decisions. It never sends email or spends money: those still land in the approvals inbox.
+
+Speed: defaults to `claude-opus-5` at `low` effort with a cached system prompt, which gives first tokens in well under a second on a normal connection. The **deep** toggle switches to `high` effort for real thinking. `JARVIS_FAST=1` enables Anthropic fast mode (Opus 5, ~2.5× output speed, premium price). `JARVIS_MODEL=claude-haiku-4-5` is the cheapest option. Conversations persist per browser session in the database; `clear` starts fresh.
 
 Then, in Claude Code inside this repo:
 
@@ -56,6 +79,7 @@ Agents and the co-founder never act externally. They write an **approval request
 
 | Area | Commands |
 |---|---|
+| Cockpit | `cockpit`, `goals [company]`, `goal <company> <key> "label" --target n --deadline d [--horizon 36m --unit ref --metric key --baseline n --unit-label EUR --down]`, `goal-progress <company/key> <value>`, `chat "message" [--deep]` |
 | Portfolio | `status`, `next [ref]`, `brief [--out f.md]`, `companies`, `units [company]`, `unit <ref>`, `unit add …`, `unit park|activate|kill <ref>` |
 | Approvals | `approvals [--all]`, `approve|reject|changes <id> [--note ..]`, `executed <id>`, `request <ref> --kind .. --title .. --proposal .. --risk 0-3` |
 | Work | `tasks [ref]`, `task <ref> "title" [--due --p --owner]`, `done <id>`, `initiative <ref> "title" --objective ..`, `decision <ref> "q" --options "a|b"`, `decide <id> "choice" --why ..`, `note <ref> "title" --body .. --kind research|memo|feedback` |
@@ -72,7 +96,7 @@ Unit refs are `company/slug`. Ids can be abbreviated to their last 6 characters 
 
 ## Agents and skills
 
-Agents live in `.claude/agents/` and are invoked by the skills in `.claude/skills/` (slash commands). See `docs/agents.md` for the roster and contracts. Integrations (Gmail, Moneybird, Airtable, Notion, Shopify, Calendar, Drive) are used through Claude's connectors by the agents; the core never depends on any vendor.
+Agents live in `.claude/agents/` and are invoked by the skills in `.claude/skills/` (slash commands). See `docs/agents.md` for the roster and contracts. Sixteen MIT-licensed craft skills (cold email, prospecting, lead scoring, pricing, positioning, competitor intel, customer research, startup validation, proposals, board updates) are vendored from public collections with attribution; see `docs/skills-catalog.md`. Integrations (Gmail, Moneybird, Airtable, Notion, Shopify, Calendar, Drive) are used through Claude's connectors by the agents; the core never depends on any vendor.
 
 ## Repo layout
 
@@ -82,7 +106,8 @@ src/cli.ts              command dispatcher
 src/db/                 schema.sql + sqlite helpers
 src/domain/             types, blueprint loader
 src/services/           portfolio (companies, units, gates, metrics) · work (tasks, initiatives, decisions, notes, experiments, agent runs) · approvals · pipeline (leads, outreach)
-src/engine/             next-step engine · founder brief
+src/engine/             next-step engine · founder brief · cockpit (levels, goals on-track, drift)
+src/server/chat.ts      streaming chat with tools (Anthropic SDK, SSE)
 src/server/             dashboard + JSON API
 src/seed.ts             real portfolio structure (+ --demo sample data)
 web/                    dashboard (vanilla JS)
@@ -102,6 +127,6 @@ npm run typecheck       # tsc --noEmit
 
 ## Roadmap (not built yet, deliberately)
 
-- Programmatic agent runtime (Claude API) for scheduled runs outside Claude Code; the CLI/API surface is already what it would call.
+- Scheduled agent runs outside Claude Code (the chat runtime is the seed: same tools, add a scheduler).
 - Two-way sync adapters (Airtable/Notion) once a second operator needs a non-CLI interface.
 - Auth + hosted deployment; today the dashboard binds to localhost only.

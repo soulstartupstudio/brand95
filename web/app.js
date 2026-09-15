@@ -29,7 +29,7 @@ let state = { status: null, companies: [] };
 function route() {
   const h = location.hash.replace(/^#\/?/, "");
   const [view, ...rest] = h.split("/");
-  return { view: view || "overview", args: rest.map(decodeURIComponent) };
+  return { view: view || "cockpit", args: rest.map(decodeURIComponent) };
 }
 window.addEventListener("hashchange", render);
 
@@ -40,7 +40,8 @@ async function render() {
   renderSidebar(r);
   const main = $("#main");
   try {
-    if (r.view === "overview") main.innerHTML = viewOverview();
+    if (r.view === "cockpit") main.innerHTML = await viewCockpit();
+    else if (r.view === "overview") main.innerHTML = viewOverview();
     else if (r.view === "approvals") main.innerHTML = await viewApprovals();
     else if (r.view === "brief") main.innerHTML = await viewBrief();
     else if (r.view === "agents") main.innerHTML = await viewAgents();
@@ -56,7 +57,8 @@ function renderSidebar(r) {
   const urgent = s.next.top.length;
   const active = (v, a0) => (r.view === v && (a0 === undefined || r.args[0] === a0) ? "active" : "");
   let html = `<div class="logo"><div class="orb"></div><div><b>JARVIS</b><small>FOUNDER COMMAND CENTER</small></div></div><nav>`;
-  html += `<a href="#/" class="${active("overview")}">Overview ${urgent ? `<span class="badge warn">${urgent}</span>` : ""}</a>`;
+  html += `<a href="#/" class="${active("cockpit")}">Cockpit</a>`;
+  html += `<a href="#/overview" class="${active("overview")}">Do today ${urgent ? `<span class="badge warn">${urgent}</span>` : ""}</a>`;
   html += `<a href="#/approvals" class="${active("approvals")}">Approvals ${pending ? `<span class="badge">${pending}</span>` : `<span class="badge dim">0</span>`}</a>`;
   html += `<a href="#/brief" class="${active("brief")}">Founder brief</a>`;
   html += `<a href="#/agents" class="${active("agents")}">Agents</a>`;
@@ -189,6 +191,131 @@ async function viewAgents() {
   <div class="card"><h2>Recent runs</h2>${runs.length ? `<table><tr><th>Agent</th><th>Objective</th><th>Status</th><th>Summary</th></tr>${runs.map((r) => `<tr><td class="mono">${esc(r.agent)}</td><td>${esc(r.objective)}</td><td>${pill(r.status)}</td><td class="muted">${esc(r.summary ?? "")}</td></tr>`).join("")}</table>` : `<div class="empty">No runs logged yet. Agents log runs with <code>jarvis agent start …</code></div>`}</div></div>`;
 }
 
+// ---------------------------------------------------------------- cockpit
+function ring(value, max, label, color) {
+  const pct = max ? Math.max(0, Math.min(1, value / max)) : 0;
+  const r = 26, c = 2 * Math.PI * r;
+  return `<div class="gauge"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--line)" stroke-width="7"/><circle cx="32" cy="32" r="${r}" fill="none" stroke="${color}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - pct)}" transform="rotate(-90 32 32)"/></svg><div><div class="n">${value === null || value === undefined ? "—" : value}${max === 100 ? "%" : ""}</div><div class="l">${label}</div></div></div>`;
+}
+function goalBar(g) {
+  const st = g.status, pct = g.progress === null ? 0 : Math.round(g.progress * 100), exp = Math.round(g.expected * 100);
+  const label = { no_data: "no data", ahead: "ahead", on_track: "on track", behind: "behind", off_track: "off track", achieved: "achieved", overdue: "overdue" }[st];
+  const val = g.current === null ? "" : `${fmtNum(g.current)} / `;
+  return `<div class="goal"><div class="t"><span>${esc(g.goal.label)} <span class="pill ${st}">${label}</span></span><span>${val}${fmtNum(g.goal.target)} ${esc(g.goal.unit_label ?? "")} · ${esc(g.goal.deadline)}</span></div>
+    ${g.status === "no_data" ? `<div class="nd">No current value. <button class="small" onclick="goalProgress('${g.goal.id}','${esc(g.goal.label)}')">Record</button></div>` : `<div class="track ${st}"><i style="width:${pct}%"></i><em style="left:${exp}%" title="expected by now: ${exp}%"></em></div>`}</div>`;
+}
+function fmtNum(n) { return n === null || n === undefined ? "—" : Math.abs(n) >= 1e6 ? (n / 1e6).toFixed(1) + "M" : Math.abs(n) >= 1e4 ? (n / 1e3).toFixed(0) + "k" : String(n); }
+window.goalProgress = async (id, label) => {
+  const v = prompt(`Current value for "${label}"`); if (v === null || v === "") return;
+  const note = prompt("Source (optional)") ?? "";
+  await act(`goals/${id}/progress`, { current: Number(v), note }, "Goal updated");
+};
+async function viewCockpit() {
+  const c = await api("cockpit");
+  const colorFor = { on_track: "var(--ok)", attention: "var(--warn)", off_track: "var(--bad)", no_data: "var(--line-2)" };
+  const scoreColor = c.score === null ? "var(--line-2)" : c.score >= 70 ? "var(--ok)" : c.score >= 40 ? "var(--warn)" : "var(--bad)";
+  const measured = c.companies.reduce((n, x) => n + x.on_track.measured, 0), okc = c.companies.reduce((n, x) => n + x.on_track.ok, 0), nd = c.companies.reduce((n, x) => n + x.on_track.no_data, 0);
+  const avgLevel = c.companies.length ? (c.companies.reduce((n, x) => n + x.level, 0) / c.companies.length).toFixed(1) : 0;
+  return `
+  <div class="topbar"><div><h1>Cockpit</h1><div class="crumbs">${c.generated_at.slice(0, 10)} · where you are, whether you are on track, where focus goes</div></div>
+    <div class="row-actions"><button onclick="openChat('Give me a 5-line cockpit read: on track, off track, and the one thing to do today.')">Ask Jarvis for a read</button><a href="#/approvals"><button class="primary">Approvals ${c.approvals_pending}</button></a></div></div>
+  <div class="cockpit-head">
+    <div class="card">${ring(c.score, 100, `goals on track (${okc}/${measured} measured, ${nd} no data)`, scoreColor)}</div>
+    <div class="card">${ring(Number(avgLevel), 5, "average company level (0 idea → 5 systemized)", "var(--accent)")}</div>
+    <div class="card stat"><b>${c.urgent}</b><span>urgent actions today</span></div>
+    <div class="card stat"><b>${c.approvals_pending}</b><span>approvals waiting on you</span></div>
+  </div>
+  ${warnings(c.warnings)}
+  ${c.drift.length ? `<div class="drift">${c.drift.map((d) => `<div>◆ ${esc(d)}</div>`).join("")}</div>` : ""}
+  <div class="grid cols-2">
+    ${c.companies.map((co) => `<div class="card co ${co.status}"><h2><a href="#/company/${co.slug}">${esc(co.name)}</a><span class="pill ${co.status}">${co.status.replace("_", " ")}</span></h2>
+      <div class="muted" style="font-size:12px">${esc(co.north_star ?? "")}</div>
+      <div class="level"><b>L${co.level}</b><div class="bar"><i style="width:${(co.level / 5) * 100}%"></i></div><span class="dim mono" style="font-size:11px">${esc(co.level_label)}</span></div>
+      <h4>Goals</h4>${co.goals.length ? co.goals.map(goalBar).join("") : `<div class="empty">No goals. <code>jarvis goal ${esc(co.slug)} &lt;key&gt; "label" --target n --deadline YYYY-MM-DD</code></div>`}
+      <h4 style="margin-top:12px">Units</h4>${co.units.map((u) => `<div class="unitrow"><span class="lv">L${u.level}</span><span><a href="#/unit/${co.slug}/${u.unit.slug}">${esc(u.unit.name)}</a> <span class="d">${esc(u.detail)}</span></span><i class="dot ${u.unit.status !== "active" ? "off" : u.score >= 30 ? "hot" : u.score >= 12 ? "warm" : "cool"}"></i></div>`).join("") || `<div class="empty">No units.</div>`}
+      ${co.focus.length ? `<h4 style="margin-top:12px">Focus now</h4>${actionList(co.focus.map((f) => ({ ...f, priority: 1 })))}` : ""}
+      <div class="dim" style="font-size:11.5px;margin-top:10px">Alignment: ${co.alignment.linked}/${co.alignment.total} initiatives linked to a goal${co.alignment.unlinked.length ? ` · unlinked: ${esc(co.alignment.unlinked.join("; "))}` : ""}</div>
+    </div>`).join("")}
+  </div>`;
+}
+
+// ---------------------------------------------------------------- chat
+const chatState = { open: false, session: null, busy: false, deep: false, cfg: null };
+try { chatState.session = localStorage.getItem("jarvis.session") || null; } catch {}
+if (!chatState.session) { chatState.session = "web-" + Math.random().toString(36).slice(2, 8); try { localStorage.setItem("jarvis.session", chatState.session); } catch {} }
+
+function mountChat() {
+  if ($("#chat")) return;
+  const fab = document.createElement("button"); fab.className = "chat-fab"; fab.innerHTML = `<span class="orb"></span> Talk to Jarvis`; fab.onclick = () => openChat(); document.body.appendChild(fab);
+  const el = document.createElement("aside"); el.id = "chat";
+  el.innerHTML = `<header><b>JARVIS</b><div class="cfg"><label><input type="checkbox" id="chat-deep"> deep</label><span id="chat-model" class="mono"></span><button class="ghost small" onclick="clearChat()">clear</button><button class="ghost small" onclick="closeChat()">✕</button></div></header>
+    <div class="log" id="chat-log"></div>
+    <form id="chat-form"><textarea id="chat-input" placeholder="Ask, decide, or instruct. Enter to send, Shift+Enter for a new line." rows="2"></textarea><button class="primary" id="chat-send">Send</button></form>
+    <div class="hint">Jarvis reads the live state. It can add tasks, leads, drafts, goals and approval requests. It never sends or spends without an approval.</div>`;
+  document.body.appendChild(el);
+  $("#chat-form").onsubmit = (ev) => { ev.preventDefault(); sendChat(); };
+  $("#chat-input").addEventListener("keydown", (ev) => { if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); sendChat(); } });
+  $("#chat-deep").onchange = (ev) => (chatState.deep = ev.target.checked);
+  document.addEventListener("keydown", (ev) => { if (ev.key === "/" && document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA") { ev.preventDefault(); openChat(); } if (ev.key === "Escape") closeChat(); });
+  loadChat();
+}
+async function loadChat() {
+  try {
+    const { history, config } = await api(`chat?session=${encodeURIComponent(chatState.session)}`);
+    chatState.cfg = config;
+    $("#chat-model").textContent = config.model + (config.fast ? " · fast" : "") + (config.api_key ? "" : " · no API key");
+    const log = $("#chat-log"); log.innerHTML = "";
+    for (const m of history) appendMsg(m.role, typeof m.content === "string" ? m.content : m.content.filter((b) => b.type === "text").map((b) => b.text).join("\n"));
+    if (!history.length) log.innerHTML = `<div class="empty-chat">${config.api_key ? "" : `<div class="warnings"><div>No API key. Set <code>ANTHROPIC_API_KEY</code> in the environment of <code>npm run serve</code>.</div></div>`}Try:
+      <button onclick="openChat('Where am I off track and what is the one thing to do today?')">Where am I off track and what is the one thing to do today?</button>
+      <button onclick="openChat('Are my active initiatives still in line with the 36-month goals?')">Are my initiatives in line with the 36-month goals?</button>
+      <button onclick="openChat('Propose the next step for custom95/sales as an approval request.')">Propose the next step for custom95/sales</button></div>`;
+    log.scrollTop = log.scrollHeight;
+  } catch (e) { $("#chat-log").innerHTML = `<div class="warnings"><div>${esc(e.message)}</div></div>`; }
+}
+window.openChat = (prefill) => { chatState.open = true; $("#chat").classList.add("open"); if (prefill) $("#chat-input").value = prefill; $("#chat-input").focus(); };
+window.closeChat = () => { chatState.open = false; $("#chat").classList.remove("open"); };
+window.clearChat = async () => { await api("chat/clear", { session: chatState.session }); loadChat(); };
+function appendMsg(role, text, streaming = false) {
+  const div = document.createElement("div"); div.className = `msg ${role}${streaming ? " streaming" : ""}`;
+  div.innerHTML = role === "user" ? esc(text).replace(/\n/g, "<br>") : md(text || "");
+  $("#chat-log").appendChild(div); $("#chat-log").scrollTop = $("#chat-log").scrollHeight; return div;
+}
+async function sendChat() {
+  if (chatState.busy) return;
+  const input = $("#chat-input"); const text = input.value.trim(); if (!text) return;
+  input.value = ""; chatState.busy = true; $("#chat-send").disabled = true;
+  const emptyHint = $("#chat-log .empty-chat"); if (emptyHint) emptyHint.remove();
+  appendMsg("user", text);
+  const el = appendMsg("assistant", "", true);
+  let buf = "", tools = "", mutated = false;
+  const r = route(); const unit = r.view === "unit" ? `${r.args[0]}/${r.args[1]}` : undefined;
+  try {
+    const res = await fetch("/api/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ message: text, session: chatState.session, deep: chatState.deep, unit }) });
+    if (!res.ok || !res.body) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
+    const reader = res.body.getReader(); const dec = new TextDecoder(); let pending = "";
+    const paint = () => { el.innerHTML = tools + md(buf); $("#chat-log").scrollTop = $("#chat-log").scrollHeight; };
+    while (true) {
+      const { value, done } = await reader.read(); if (done) break;
+      pending += dec.decode(value, { stream: true });
+      let idx;
+      while ((idx = pending.indexOf("\n\n")) >= 0) {
+        const line = pending.slice(0, idx).trim(); pending = pending.slice(idx + 2);
+        if (!line.startsWith("data: ")) continue;
+        const ev = JSON.parse(line.slice(6));
+        if (ev.type === "text") { buf += ev.text; paint(); }
+        else if (ev.type === "tool") { tools += `<span class="tool">⚙ ${esc(ev.name)}</span>`; paint(); }
+        else if (ev.type === "tool_result") { if (ev.ok) mutated = true; tools += `<span class="tool ${ev.ok ? "" : "err"}">${ev.ok ? "✓" : "✗"} ${esc(ev.summary)}</span>`; paint(); }
+        else if (ev.type === "error") { buf += `\n\n**Error:** ${ev.message}`; paint(); }
+        else if (ev.type === "done") { el.innerHTML = tools + md(buf) + `<div class="meta">${esc(ev.model)} · ${(ev.ms / 1000).toFixed(1)}s · ${ev.usage.output} tokens out${ev.usage.cache_read ? ` · ${ev.usage.cache_read} cached` : ""}</div>`; }
+      }
+    }
+  } catch (e) { el.innerHTML = md(buf) + `<div class="warnings"><div>${esc(e.message)}</div></div>`; }
+  el.classList.remove("streaming"); chatState.busy = false; $("#chat-send").disabled = false; input.focus();
+  if (mutated) mountChat();
+render();
+}
+
 // ---------------------------------------------------------------- unit
 async function viewUnit(ref, tab) {
   const d = await api("unit/" + encodeURIComponent(ref));
@@ -251,7 +378,8 @@ function tabValidation(d, ref) {
 }
 window.gate = async (unit, criterion, checked) => {
   const evidence = checked ? prompt("Evidence (what proves it? link or one line)") : null;
-  if (checked && evidence === null) return render();
+  if (checked && evidence === null) return mountChat();
+render();
   await act("gate", { unit, criterion, status: checked ? "met" : "open", evidence }, "Gate updated");
 };
 window.advance = async (unit, complete) => {
@@ -311,4 +439,5 @@ function tabNotes(d, ref) {
     <details><summary>+ Add note</summary><form class="form" onsubmit="submitForm(event,'notes','Note saved')"><input type="hidden" name="unit" value="${d.unit.id}"><div class="row"><div><label>Title</label><input name="title" required></div><div><label>Kind</label><select name="kind"><option>note</option><option>research</option><option>feedback</option><option>memo</option></select></div></div><div><label>Body</label><textarea name="body" required></textarea></div><div><button class="primary">Save</button></div></form></details></div>`;
 }
 
+mountChat();
 render();

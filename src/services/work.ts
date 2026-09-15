@@ -41,9 +41,9 @@ export function overdueTasks(unitId?: string): Task[] {
 
 // --- initiatives ---------------------------------------------------------
 
-export function addInitiative(unitRef: string, title: string, opts: Partial<Pick<Initiative, "objective" | "priority" | "owner" | "due">> = {}): Initiative {
+export function addInitiative(unitRef: string, title: string, opts: Partial<Pick<Initiative, "objective" | "priority" | "owner" | "due" | "goal_id">> = {}): Initiative {
   const u = requireUnit(unitRef);
-  const row = { id: newId(), unit_id: u.id, title, objective: opts.objective ?? null, status: "active", priority: opts.priority ?? 2, owner: opts.owner ?? "founder", due: opts.due ?? null, created_at: now(), done_at: null };
+  const row = { id: newId(), unit_id: u.id, title, objective: opts.objective ?? null, status: "active", priority: opts.priority ?? 2, owner: opts.owner ?? "founder", due: opts.due ?? null, goal_id: opts.goal_id ?? null, created_at: now(), done_at: null };
   insert("initiatives", row);
   logEvent(actor(), "initiative.created", { unit_id: u.id, ref_id: row.id, payload: { title } });
   return row as Initiative;

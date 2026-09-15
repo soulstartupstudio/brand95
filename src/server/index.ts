@@ -12,17 +12,37 @@ import * as L from "../services/pipeline.ts";
 import { nextForPortfolio, nextForUnit } from "../engine/next.ts";
 import { founderBrief } from "../engine/brief.ts";
 import { unitDetail } from "../cli.ts";
+import { cockpit } from "../engine/cockpit.ts";
+import * as G from "../services/goals.ts";
+import { chat, sessionHistory, clearSession, modelConfig } from "./chat.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const webDir = resolve(here, "../../web");
 const MIME: Record<string, string> = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png" };
 
-type Body = Record<string, string | number | undefined | null | string[]>;
+type Body = Record<string, string | number | boolean | undefined | null | string[]>;
+
+async function streamChat(res: ServerResponse, message: string, opts: { session?: string; deep?: boolean; unit?: string }): Promise<void> {
+  res.writeHead(200, { "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-store", connection: "keep-alive", "x-accel-buffering": "no" });
+  res.flushHeaders?.();
+  const send = (ev: unknown) => res.write(`data: ${JSON.stringify(ev)}\n\n`);
+  if (!message.trim()) { send({ type: "error", message: "Empty message" }); return void res.end(); }
+  try {
+    for await (const ev of chat(message, opts)) send(ev);
+  } catch (e) {
+    send({ type: "error", message: e instanceof Error ? e.message : String(e) });
+  }
+  res.end();
+}
 
 export function serve(port: number): void {
   const server = createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? "/", "http://localhost");
+      if (url.pathname === "/api/chat" && req.method === "POST") {
+        const body = await readBody(req);
+        return streamChat(res, String(body.message ?? ""), { session: body.session ? String(body.session) : undefined, deep: body.deep === true || body.deep === "true", unit: body.unit ? String(body.unit) : undefined });
+      }
       if (url.pathname.startsWith("/api/")) {
         const body = req.method === "POST" ? await readBody(req) : {};
         const result = route(req.method ?? "GET", url, body);
@@ -47,6 +67,9 @@ function route(method: string, url: URL, b: Body): unknown {
 
   if (method === "GET") {
     switch (p[0]) {
+      case "cockpit": return cockpit();
+      case "goals": return G.trackAll(q("company"));
+      case "chat": return { history: sessionHistory(q("session") ?? "default"), config: { ...modelConfig(false), api_key: !!(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN) } };
       case "status": return { companies: P.listCompanies().map((c) => ({ ...c, units: P.listUnits(c.id).map((u) => ({ ...u, gate: P.gateStatus(u), open_tasks: W.listTasks(u.id).length, pending_approvals: A.listApprovals("pending", u.id).length, next: nextForUnit(u).actions.slice(0, 2) })) })), approvals: A.listApprovals("pending"), next: nextForPortfolio(), agent_runs: W.listAgentRuns(8), events: all("SELECT * FROM events ORDER BY ts DESC LIMIT 25") };
       case "next": return p[1] ? nextForUnit(P.requireUnit(decodeURIComponent(p[1]))) : nextForPortfolio(q("company"));
       case "brief": return { markdown: founderBrief(q("company")) };
@@ -71,6 +94,12 @@ function route(method: string, url: URL, b: Body): unknown {
 
   // POST
   switch (p[0]) {
+    case "goals":
+      if (p[2] === "progress") return G.setGoalProgress(p[1], Number(b.current), s("note"));
+      return G.upsertGoal({ company: s("company")!, key: s("key")!, label: s("label") ?? s("key")!, target: Number(b.target), deadline: s("deadline")!, horizon: (s("horizon") as never) ?? "12m", unit: s("unit") || undefined, metric_key: s("metric_key"), baseline: n("baseline"), current: n("current"), unit_label: s("unit_label"), direction: (s("direction") as never) ?? "up" });
+    case "chat":
+      if (p[1] === "clear") return void clearSession(s("session") ?? "default");
+      break;
     case "approvals":
       if (p[2] === "decide") return A.decideApproval(p[1], s("decision") as never, s("note"));
       if (p[2] === "executed") return A.markExecuted(p[1]);
@@ -80,7 +109,7 @@ function route(method: string, url: URL, b: Body): unknown {
       return W.addTask(s("unit")!, s("title")!, { due: s("due") || undefined, priority: n("priority"), owner: s("owner") || undefined, notes: s("notes") || undefined });
     case "initiatives":
       if (p[2] === "close") return void W.closeInitiative(p[1], (s("status") as never) ?? "done");
-      return W.addInitiative(s("unit")!, s("title")!, { objective: s("objective"), due: s("due") || undefined, priority: n("priority") });
+      return W.addInitiative(s("unit")!, s("title")!, { objective: s("objective"), due: s("due") || undefined, priority: n("priority"), goal_id: s("goal") ? G.getGoal(s("goal")!)?.id : undefined });
     case "decisions":
       if (p[2] === "decide") return W.decide(p[1], s("decision")!, s("rationale"));
       return W.addDecision(s("unit") || null, s("title")!, { context: s("context"), options: Array.isArray(b.options) ? (b.options as string[]) : s("options")?.split("|").map((x) => x.trim()) });

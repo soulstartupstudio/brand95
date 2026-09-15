@@ -7,7 +7,8 @@
 - **Draft → approve → execute.** External or irreversible actions are represented as approval requests. Execution reads the approval status; the CLI refuses to record a send for an unapproved message.
 - **Deterministic core, judgment on top.** `src/engine/next.ts` computes ranked actions from state alone (testable, explainable). The `cofounder` agent adds judgment and writes proposals; it never bypasses the engine's warnings.
 - **No vendor lock.** Integrations happen through Claude connectors used by agents (Gmail, Moneybird, Airtable, Notion, Shopify, Calendar, Drive). The domain model never references a vendor id except `outreach.external_id`.
-- **Zero runtime dependencies.** Node ≥ 22.18: `node:sqlite`, `node:http`, `node:test`, native TypeScript type-stripping. Install is `npm install` for `tsc` only.
+- **Chat runtime.** `src/server/chat.ts` runs a manual streaming tool loop on the Anthropic SDK (`client.beta.messages.stream`): stable system prompt with a cache breakpoint, volatile state snapshot as a second system block, strict JSON-schema tools with eager input streaming and server-side plus local validation, at most 8 tool iterations, history persisted per session in `chat_messages`. Model/effort/fast-mode from env (`JARVIS_MODEL`, `JARVIS_EFFORT`, `JARVIS_FAST`). Events stream to the browser as SSE (`POST /api/chat`).
+- **One runtime dependency** (`@anthropic-ai/sdk`). Node ≥ 22.18: `node:sqlite`, `node:http`, `node:test`, native TypeScript type-stripping. Install is `npm install` for `tsc` only.
 
 ## Layers
 
@@ -20,7 +21,7 @@ web/ dashboard  ─────────────────────�
 - `src/services/work.ts` — tasks, initiatives, decisions, notes, experiments, agent runs.
 - `src/services/approvals.ts` — approval requests, decisions, execution marking, side effects (approving an outreach batch flips drafts to approved).
 - `src/services/pipeline.ts` — leads, outreach drafts, batch approvals, send/reply recording.
-- `src/engine/next.ts` — next-step engine (per unit and portfolio). `src/engine/brief.ts` — markdown founder brief.
+- `src/engine/next.ts` — next-step engine (per unit and portfolio). `src/engine/brief.ts` — markdown founder brief. `src/engine/cockpit.ts` — company levels, goal tracking (linear expectation vs progress), focus, drift. `src/services/goals.ts` — goals CRUD and on-track math.
 - `src/server/index.ts` — static dashboard + JSON API. `src/cli.ts` — command dispatcher.
 
 ## Data model
@@ -40,6 +41,8 @@ web/ dashboard  ─────────────────────�
 | metrics | KPI value per unit × key × period (upsert). |
 | notes | research, memos, feedback, briefs. |
 | agent_runs | who ran what, when, with which summary/outputs. |
+| goals | measurable North Stars per company: target, baseline, current, deadline, horizon 12m/36m, optional link to a unit KPI. |
+| chat_messages | persisted chat turns per session (content blocks as JSON). |
 | events | append-only audit log for every mutation. |
 
 Ids are time-sortable 18-char strings; the last 6 characters are unique enough to use as short refs in the CLI and dashboard (`byRef` resolves them and errors on ambiguity).
