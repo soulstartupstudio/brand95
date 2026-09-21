@@ -118,6 +118,15 @@ docs/                   architecture, operating model, approvals, agents, legacy
 tests/                  node:test suite
 ```
 
+## Hosting (phone access, password)
+
+One container with a persistent volume. Set `JARVIS_PASSWORD` and the server binds publicly with a login page, HttpOnly session cookie, login rate limiting, and `Authorization: Bearer <password>` for scripts. Fly.io is the recommended host (about €3/month); Railway and any Docker host work the same way. Vercel does not fit: no persistent disk for the SQLite file. Steps in `docs/deploy.md`.
+
+```bash
+fly launch --copy-config --no-deploy && fly volumes create jarvis_data --size 1 --region ams
+fly secrets set JARVIS_PASSWORD='…' ANTHROPIC_API_KEY='…' && fly deploy
+```
+
 ## Development
 
 ```bash
@@ -129,4 +138,4 @@ npm run typecheck       # tsc --noEmit
 
 - Scheduled agent runs outside Claude Code (the chat runtime is the seed: same tools, add a scheduler).
 - Two-way sync adapters (Airtable/Notion) once a second operator needs a non-CLI interface.
-- Auth + hosted deployment; today the dashboard binds to localhost only.
+- Multi-user auth (today: one founder password, or an identity proxy in front).

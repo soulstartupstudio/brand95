@@ -15,6 +15,8 @@ import { unitDetail } from "../cli.ts";
 import { cockpit } from "../engine/cockpit.ts";
 import * as G from "../services/goals.ts";
 import { chat, sessionHistory, clearSession, modelConfig } from "./chat.ts";
+import { gate, authEnabled } from "./auth.ts";
+import type { Server } from "node:http";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const webDir = resolve(here, "../../web");
@@ -35,10 +37,15 @@ async function streamChat(res: ServerResponse, message: string, opts: { session?
   res.end();
 }
 
-export function serve(port: number): void {
+export function serve(port: number, host?: string): Server {
+  const bind = host ?? process.env.JARVIS_HOST ?? (authEnabled() ? "0.0.0.0" : "127.0.0.1");
+  if (bind !== "127.0.0.1" && bind !== "localhost" && !authEnabled() && process.env.JARVIS_INSECURE !== "1") {
+    throw new Error(`Refusing to bind ${bind} without JARVIS_PASSWORD. Set a password (or JARVIS_INSECURE=1 if you really know what you are doing).`);
+  }
   const server = createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? "/", "http://localhost");
+      if (await gate(req, res, url.pathname)) return;
       if (url.pathname === "/api/chat" && req.method === "POST") {
         const body = await readBody(req);
         return streamChat(res, String(body.message ?? ""), { session: body.session ? String(body.session) : undefined, deep: body.deep === true || body.deep === "true", unit: body.unit ? String(body.unit) : undefined });
@@ -54,9 +61,10 @@ export function serve(port: number): void {
       return json(res, message.startsWith("Unknown") || message.startsWith("Not found") ? 404 : 400, { error: message });
     }
   });
-  server.listen(port, "127.0.0.1", () => {
-    console.log(`Jarvis dashboard → http://127.0.0.1:${port}`);
+  server.listen(port, bind, () => {
+    console.log(`Jarvis dashboard → http://${bind === "0.0.0.0" ? "0.0.0.0" : bind}:${port}${authEnabled() ? " (password protected)" : ""}`);
   });
+  return server;
 }
 
 function route(method: string, url: URL, b: Body): unknown {
@@ -70,7 +78,7 @@ function route(method: string, url: URL, b: Body): unknown {
       case "cockpit": return cockpit();
       case "goals": return G.trackAll(q("company"));
       case "chat": return { history: sessionHistory(q("session") ?? "default"), config: { ...modelConfig(false), api_key: !!(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN) } };
-      case "status": return { companies: P.listCompanies().map((c) => ({ ...c, units: P.listUnits(c.id).map((u) => ({ ...u, gate: P.gateStatus(u), open_tasks: W.listTasks(u.id).length, pending_approvals: A.listApprovals("pending", u.id).length, next: nextForUnit(u).actions.slice(0, 2) })) })), approvals: A.listApprovals("pending"), next: nextForPortfolio(), agent_runs: W.listAgentRuns(8), events: all("SELECT * FROM events ORDER BY ts DESC LIMIT 25") };
+      case "status": return { auth: authEnabled(), companies: P.listCompanies().map((c) => ({ ...c, units: P.listUnits(c.id).map((u) => ({ ...u, gate: P.gateStatus(u), open_tasks: W.listTasks(u.id).length, pending_approvals: A.listApprovals("pending", u.id).length, next: nextForUnit(u).actions.slice(0, 2) })) })), approvals: A.listApprovals("pending"), next: nextForPortfolio(), agent_runs: W.listAgentRuns(8), events: all("SELECT * FROM events ORDER BY ts DESC LIMIT 25") };
       case "next": return p[1] ? nextForUnit(P.requireUnit(decodeURIComponent(p[1]))) : nextForPortfolio(q("company"));
       case "brief": return { markdown: founderBrief(q("company")) };
       case "companies": return P.listCompanies();

@@ -58,7 +58,7 @@ The Brand95 Blueprint (`brand-blueprint.json`) is the condensed, machine-readabl
 
 ## Security and safety
 
-- Dashboard binds to `127.0.0.1` only. No auth: it is a single-founder local tool. Put it behind a tunnel with auth before exposing it.
+- Dashboard binds to `127.0.0.1` by default. With `JARVIS_PASSWORD` set it binds `0.0.0.0` behind a login page (`src/server/auth.ts`): stateless HMAC session cookie, HttpOnly, SameSite=Lax, Secure behind HTTPS, 5 attempts/minute/IP, Bearer token for scripts. The server refuses a public bind without a password. Deployment: `Dockerfile`, `fly.toml`, `docs/deploy.md`.
 - No secrets in the database or repo. Connectors are configured in Claude, not here.
 - Every mutation writes an event with actor (`JARVIS_ACTOR`/`JARVIS_FOUNDER` env, default `founder`; agents set `agent:<name>`).
 - `advance --force` is allowed but logged with `forced: true`.

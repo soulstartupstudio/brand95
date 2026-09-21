@@ -78,7 +78,7 @@ jarvis — founder command center
     jarvis agents
 
   System
-    jarvis serve [--port 4795]                    dashboard + JSON API
+    jarvis serve [--port 4795] [--host 0.0.0.0]   dashboard + JSON API (set JARVIS_PASSWORD to expose it)
     jarvis events [--limit 30]
     jarvis blueprints
     jarvis export [--out data/exports]            dump every table to JSON
@@ -106,7 +106,7 @@ async function main(argv: string[]): Promise<void> {
       ids: { type: "string" }, "external-id": { type: "string" }, limit: { type: "string" }, reason: { type: "string" },
       blueprint: { type: "string" }, mission: { type: "string" },
       horizon: { type: "string" }, unit: { type: "string" }, baseline: { type: "string" }, current: { type: "string" }, "unit-label": { type: "string" }, down: { type: "boolean" }, deadline: { type: "string" },
-      deep: { type: "boolean" }, session: { type: "string" }, goal: { type: "string" },
+      deep: { type: "boolean" }, session: { type: "string" }, goal: { type: "string" }, host: { type: "string" },
     },
   });
   const o = values as Opts;
@@ -295,7 +295,7 @@ async function main(argv: string[]): Promise<void> {
     }
     case "agents": return out(W.listAgentRuns(num("limit") ?? 20));
 
-    case "serve": return void serve(num("port") ?? Number(process.env.JARVIS_PORT ?? 4795));
+    case "serve": return void serve(num("port") ?? Number(process.env.JARVIS_PORT ?? process.env.PORT ?? 4795), str("host"));
     case "events": {
       const rows = all("SELECT * FROM events ORDER BY ts DESC LIMIT ?", num("limit") ?? 30);
       if (o.json) return out(rows);
