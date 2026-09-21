@@ -1,0 +1,24 @@
+{
+  "key": "dept-finance",
+  "name": "Finance department",
+  "kind": "department",
+  "mission": "Protect cash and make unit economics visible enough to make decisions weekly.",
+  "kpis": [
+    { "key": "revenue_mtd", "label": "Revenue MTD (EUR)", "direction": "up" },
+    { "key": "net_margin", "label": "Net margin %", "direction": "up", "target": 12 },
+    { "key": "cash_runway_months", "label": "Cash runway (months)", "direction": "up", "target": 6 },
+    { "key": "dso", "label": "Days sales outstanding", "direction": "down", "target": 30 },
+    { "key": "overdue_receivables", "label": "Overdue receivables (EUR)", "direction": "down", "target": 0 }
+  ],
+  "cadence": [
+    { "key": "weekly_cash", "label": "Weekly cash position", "every": "week" },
+    { "key": "monthly_close", "label": "Monthly close and margin by client", "every": "month" },
+    { "key": "quarterly_forecast", "label": "Quarterly forecast refresh", "every": "quarter" }
+  ],
+  "health_checks": [
+    { "key": "cash_known", "label": "Cash position updated within the last 7 days" },
+    { "key": "margin_by_client", "label": "Margin per client is known for the last closed month" },
+    { "key": "receivables_chased", "label": "All invoices over 30 days have a dunning action" }
+  ],
+  "playbooks": ["finance-review"]
+}
