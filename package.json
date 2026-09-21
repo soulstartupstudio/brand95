@@ -15,6 +15,7 @@
     "init": "node --no-warnings=ExperimentalWarning src/cli.ts init",
     "seed": "node --no-warnings=ExperimentalWarning src/cli.ts seed",
     "serve": "node --no-warnings=ExperimentalWarning src/cli.ts serve",
+    "start": "node --no-warnings=ExperimentalWarning src/cli.ts init && node --no-warnings=ExperimentalWarning src/cli.ts seed && node --no-warnings=ExperimentalWarning src/cli.ts serve",
     "brief": "node --no-warnings=ExperimentalWarning src/cli.ts brief",
     "next": "node --no-warnings=ExperimentalWarning src/cli.ts next",
     "test": "node --no-warnings=ExperimentalWarning --test \"tests/**/*.test.ts\"",

@@ -62,6 +62,7 @@ function renderSidebar(r) {
   html += `<a href="#/approvals" class="${active("approvals")}">Approvals ${pending ? `<span class="badge">${pending}</span>` : `<span class="badge dim">0</span>`}</a>`;
   html += `<a href="#/brief" class="${active("brief")}">Founder brief</a>`;
   html += `<a href="#/agents" class="${active("agents")}">Agents</a>`;
+  if (s.auth) html += `<a href="/logout" class="dim" style="font-size:12px">Sign out</a>`;
   for (const c of s.companies) {
     html += `<div class="company"><a href="#/company/${c.slug}" class="${active("company", c.slug)}">${esc(c.name)}</a></div>`;
     for (const u of c.units) {
