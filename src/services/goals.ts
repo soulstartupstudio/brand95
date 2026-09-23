@@ -33,7 +33,9 @@ export function setGoalProgress(ref: string, current: number, note?: string): Go
   const g = getGoal(ref);
   if (!g) throw new Error(`Unknown goal ${ref}`);
   const achieved = g.direction === "up" ? current >= g.target : current <= g.target;
-  update("goals", g.id, { current, note: note ?? g.note, updated_at: now(), status: achieved ? "achieved" : g.status === "achieved" ? "active" : g.status });
+  // First measurement becomes the baseline: progress is measured from where you started, not from zero.
+  const baseline = g.baseline ?? current;
+  update("goals", g.id, { current, baseline, note: note ?? g.note, updated_at: now(), status: achieved ? "achieved" : g.status === "achieved" ? "active" : g.status });
   logEvent(actor(), "goal.progress", { unit_id: g.unit_id, ref_id: g.id, payload: { key: g.key, current } });
   return getGoal(g.id)!;
 }
@@ -70,11 +72,15 @@ export interface GoalTrack {
 }
 
 /** On-track math: linear expectation between start and deadline. Behind = >10 points under, off track = >25. */
-export function trackGoal(g: Goal, today = new Date()): GoalTrack {
+export function trackGoal(goal: Goal, today = new Date()): GoalTrack {
+  let g = goal;
   let current = g.current;
   if (g.metric_key && g.unit_id) {
     const m = get<{ value: number }>("SELECT value FROM metrics WHERE unit_id = ? AND key = ? ORDER BY period DESC LIMIT 1", g.unit_id, g.metric_key);
-    if (m) current = m.value;
+    if (m) {
+      current = m.value;
+      if (g.baseline === null) { update("goals", g.id, { baseline: m.value, current: m.value, updated_at: now() }); g = { ...g, baseline: m.value, current: m.value }; }
+    }
   }
   const start = new Date(g.start).getTime();
   const end = new Date(g.deadline).getTime();

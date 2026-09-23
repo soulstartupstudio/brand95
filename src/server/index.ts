@@ -16,6 +16,7 @@ import { cockpit } from "../engine/cockpit.ts";
 import * as G from "../services/goals.ts";
 import { chat, sessionHistory, clearSession, modelConfig } from "./chat.ts";
 import { gate, authEnabled } from "./auth.ts";
+import { importSnapshot, type Snapshot } from "../services/sync.ts";
 import type { Server } from "node:http";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -102,6 +103,7 @@ function route(method: string, url: URL, b: Body): unknown {
 
   // POST
   switch (p[0]) {
+    case "import": return importSnapshot(b as unknown as Snapshot);
     case "goals":
       if (p[2] === "progress") return G.setGoalProgress(p[1], Number(b.current), s("note"));
       return G.upsertGoal({ company: s("company")!, key: s("key")!, label: s("label") ?? s("key")!, target: Number(b.target), deadline: s("deadline")!, horizon: (s("horizon") as never) ?? "12m", unit: s("unit") || undefined, metric_key: s("metric_key"), baseline: n("baseline"), current: n("current"), unit_label: s("unit_label"), direction: (s("direction") as never) ?? "up" });

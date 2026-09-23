@@ -16,6 +16,8 @@ import { nextForPortfolio, nextForUnit } from "./engine/next.ts";
 import { founderBrief } from "./engine/brief.ts";
 import { cockpit } from "./engine/cockpit.ts";
 import * as G from "./services/goals.ts";
+import { importSnapshot, type Snapshot } from "./services/sync.ts";
+import { readFileSync } from "node:fs";
 import { seed } from "./seed.ts";
 import { serve } from "./server/index.ts";
 
@@ -82,6 +84,7 @@ jarvis — founder command center
     jarvis events [--limit 30]
     jarvis blueprints
     jarvis export [--out data/exports]            dump every table to JSON
+    jarvis import <snapshot.json>                 ingest metrics/goals/leads/notes/tasks from connected apps (see docs/integrations.md)
 `;
 
 type Opts = Record<string, string | boolean | undefined>;
@@ -303,6 +306,13 @@ async function main(argv: string[]): Promise<void> {
       return;
     }
     case "blueprints": return out([...blueprints().values()].map((b) => o.json ? b : `${b.key.padEnd(20)} ${b.kind.padEnd(11)} ${b.name}`).join("\n"));
+    case "import": {
+      const snap = JSON.parse(readFileSync(args[0], "utf8")) as Snapshot;
+      const r = importSnapshot(snap);
+      console.log(`Imported from ${snap.source}: ${r.metrics} metrics, ${r.goals} goals, ${r.leads_added}+${r.leads_updated} leads, ${r.notes} notes, ${r.tasks} tasks${r.errors.length ? `\nErrors:\n  ${r.errors.join("\n  ")}` : ""}`);
+      if (r.errors.length) process.exitCode = 1;
+      return;
+    }
     case "export": {
       const dir = resolve(str("out") ?? "data/exports");
       mkdirSync(dir, { recursive: true });

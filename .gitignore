@@ -2,5 +2,6 @@ node_modules/
 data/*.db
 data/*.db-*
 data/exports/
+!data/snapshots/
 .env
 .DS_Store

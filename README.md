@@ -118,6 +118,10 @@ docs/                   architecture, operating model, approvals, agents, legacy
 tests/                  node:test suite
 ```
 
+## Connected apps
+
+Moneybird, Airtable (CRM, SRM, HR), Supabase (Brand95, PORTA, Custom95), Notion, Gmail and Shopify are read by Claude through your connectors and written into the command center as KPIs, goal progress, leads and notes. `/sync` in Claude Code, or a scheduled Routine posting to a hosted instance. Snapshots are kept in `data/snapshots/` as an audit trail. See `docs/integrations.md`.
+
 ## Hosting (phone access, password)
 
 One container with a persistent volume. Set `JARVIS_PASSWORD` and the server binds publicly with a login page, HttpOnly session cookie, login rate limiting, and `Authorization: Bearer <password>` for scripts. Fly.io is the recommended host (about €3/month); Railway and any Docker host work the same way. Vercel does not fit: no persistent disk for the SQLite file. Steps in `docs/deploy.md`.
