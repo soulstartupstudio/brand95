@@ -147,6 +147,18 @@ test("cockpit computes levels, on-track score and drift", () => {
   assert.ok(c.drift.some((d) => /no current value/.test(d)));
 });
 
+test("first measurement becomes the baseline, so day-one progress is on track rather than 'ahead'", () => {
+  const start = new Date().toISOString().slice(0, 10);
+  const deadline = new Date(Date.now() + 365 * 86400_000).toISOString().slice(0, 10);
+  G.upsertGoal({ company: "student95", key: "base_test", label: "Base", target: 100, start, deadline });
+  G.setGoalProgress("student95/base_test", 40);
+  const g = G.getGoal("student95/base_test")!;
+  assert.equal(g.baseline, 40);
+  assert.equal(G.trackGoal(g).status, "on_track");
+  G.setGoalProgress("student95/base_test", 45);
+  assert.equal(G.getGoal("student95/base_test")!.baseline, 40);
+});
+
 test("seeded goals exist for every company", () => {
   for (const co of P.listCompanies()) assert.ok(G.listGoals(co.id).length >= 1, co.slug);
 });

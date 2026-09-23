@@ -1,0 +1,23 @@
+{
+  "source": "moneybird+supabase",
+  "taken_at": "2026-09-23T09:00:00Z",
+  "metrics": [
+    { "unit": "custom95/finance", "key": "revenue_mtd", "value": 152835, "period": "2026-08", "note": "Moneybird P&L prev_month (Aug 2026) total_revenue" },
+    { "unit": "custom95/finance", "key": "net_margin", "value": 2.3, "period": "2026-09", "note": "Moneybird P&L this_year: net_profit 37,466 / total_revenue 1,617,074 (YTD 1 Jan–21 Sep 2026)" },
+    { "unit": "custom95/finance", "key": "overdue_receivables", "value": 85325, "period": "2026-09", "note": "Moneybird sales invoices state late|reminded past due: 28 invoices, oldest due 2026-03-24; total open incl. not-yet-due 115,305" },
+    { "unit": "custom95/finance", "key": "dso", "value": 19, "period": "2026-09", "note": "open receivables 115,305 / (YTD revenue 1,617,074 / 264 days) = 18.8 days" },
+    { "unit": "custom95/operations", "key": "gross_margin", "value": 29.2, "period": "2026-09", "note": "Moneybird P&L this_year: gross_profit 472,001 / total_revenue 1,617,074. Aug alone: 27.7%" }
+  ],
+  "goals": [
+    { "goal": "custom95/revenue", "current": 1617074, "note": "Moneybird YTD 2026-01-01..2026-09-21. Run-rate ≈ €2.24M/yr (YTD / 264 × 365)" },
+    { "goal": "brand95/first_launch", "current": 0, "note": "Supabase Brand95: no brand past Discover" }
+  ],
+  "notes": [
+    { "unit": "custom95/finance", "kind": "memo", "title": "Finance snapshot 2026-09-23 (Moneybird)", "body": "**YTD 2026 (1 Jan–21 Sep)**\n- Revenue €1,617,074\n- Gross profit €472,001 (29.2%)\n- Operating profit €53,816 (3.3%)\n- Net profit €37,466 (2.3%)\n\n**August 2026**\n- Revenue €152,835\n- Gross profit €42,355 (27.7%)\n- Net result −€3,579\n\n**Receivables (21 Sep)**\n- Open €115,305 across 44 invoices\n- Overdue €85,325 across 28 invoices (late €85,149 + reminded €5,455 + open €24,701 not yet due)\n- Oldest overdue due date 2026-03-24\n\n**Read**\n- Net margin 2.3% vs 12% target: the gap is structural, not a bad month. Gross margin 29% vs 35% target is the lever; the rest is opex (~€480k YTD in expenses lines).\n- Run-rate ≈ €2.24M vs €3M goal: revenue is not the problem, margin is.\n- €85k overdue is ~7 weeks of net profit sitting in other people's bank accounts.\n\nSource: Moneybird profit_loss_report (this_year, prev_month), list_invoices (period this_year, state late|reminded|open|pending_payment), pulled 2026-09-21 via connector." },
+    { "unit": "brand95/camera95", "kind": "note", "title": "Brand95 Supabase state 2026-09-23", "body": "Supabase project Brand95 (jpkkhkxutcezdnnjgbox), table Brand:\n- Camera95: ACTIVE, stage index 1 (Discover), route DUAL, budget €15,000, max inventory €8,000, 15 founder h/week, 8 tasks\n- Crossbody: ACTIVE, stage 1 (Discover), D2C-first, NL+DE metros\n- The Unbreakable Tee: ACTIVE, stage 1, golf tee, €6.95/5, budget €500, supplier found, 1 h/week\n- Hold: ACTIVE, stage 0 (Intake), D2C-first\n- Standard Dental: PARKED\n\nCommand center reconciled to this: Camera95 and Crossbody moved to Discover, Standard Dental parked, Unbreakable Tee added.\n\nSecurity: all 21 tables in this Supabase project have Row Level Security disabled. Anyone with the anon key can read or modify every row. Enable RLS with policies or keep the anon key out of any client." }
+  ],
+  "tasks": [
+    { "unit": "custom95/finance", "title": "Dunning run: 28 overdue invoices, €85,325, oldest due 2026-03-24", "priority": 1, "due": "2026-09-30" },
+    { "unit": "custom95/operations", "title": "Gross margin 29% vs 35% target: margin per project review for Aug–Sep", "priority": 1, "due": "2026-10-03" }
+  ]
+}
